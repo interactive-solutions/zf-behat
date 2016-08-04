@@ -16,7 +16,7 @@
   },
   "autoload": {
     "psr-4": {
-      "Is\\ZfBehat\\": "src/"
+      "InteractiveSolutions\\ZfBehat\\": "src/"
     },
     "classmap": [
       "./Module.php"
