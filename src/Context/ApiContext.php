@@ -1,0 +1,730 @@
+<?php
+/**
+ * @author    Erik Norgren <erik.norgren@interactivesolutions.se>
+ * @copyright Interactive Solutions
+ */
+
+namespace InteractiveSolutions\ZfBehat\Context;
+
+use Behat\Behat\Context\SnippetAcceptingContext;
+use Behat\Behat\Hook\Scope\BeforeScenarioScope;
+use Behat\Gherkin\Node\PyStringNode;
+use Behat\Gherkin\Node\TableNode;
+use DomainException;
+use InteractiveSolutions\ZfBehat\Assertions;
+use InteractiveSolutions\ZfBehat\Context\Aware\ApiClientAwareInterface;
+use InteractiveSolutions\ZfBehat\Context\Aware\ApiClientAwareTrait;
+use InteractiveSolutions\ZfBehat\Util\PluralisationUtil;
+use PHPUnit_Framework_ExpectationFailedException;
+use Zend\ServiceManager\ServiceManager;
+use Zend\ServiceManager\ServiceManagerAwareInterface;
+use function GuzzleHttp\Psr7\parse_query;
+
+class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, ServiceManagerAwareInterface
+{
+    use ApiClientAwareTrait;
+
+    /**
+     * @var UserFixtureContext
+     */
+    private $userFixtureContext;
+
+    /**
+     * @var EntityFixtureContext
+     */
+    private $entityFixtureContext;
+
+    /**
+     * @var ServiceManager
+     */
+    private $serviceManager;
+
+    /**
+     * Inject the other contexts
+     *
+     * @BeforeScenario
+     *
+     * @param BeforeScenarioScope $scope
+     *
+     * @return void
+     */
+    public function bootstrap(BeforeScenarioScope $scope)
+    {
+        $this->userFixtureContext   = $scope->getEnvironment()->getContext(UserFixtureContext::class);
+        $this->entityFixtureContext = $scope->getEnvironment()->getContext(EntityFixtureContext::class);
+    }
+
+    /**
+     * Set service manager
+     *
+     * @param ServiceManager $serviceManager
+     */
+    public function setServiceManager(ServiceManager $serviceManager)
+    {
+        $this->serviceManager = $serviceManager;
+    }
+
+    /**
+     * @When I retrieve all :type
+     */
+    public function iRetrieveAll($type)
+    {
+        $this->getClient()->get($this->createUri($type));
+    }
+
+    /**
+     * @When /^I retrieve all "([^"]*)" with "(.*)"$/
+     *
+     * @param string $type
+     * @param string $queryString
+     *
+     * @return void
+     */
+    public function iRetrieveAllWith($type, $queryString)
+    {
+        $this->getClient()->get($this->createUri($type), parse_query($queryString, false));
+    }
+
+    /**
+     * @When I retrieve all :type from :parentType with id :parentId
+     *
+     * @param string $type
+     * @param string $parentType
+     * @param string $parentId
+     *
+     * @return void
+     */
+    public function iRetrieveAllFrom($type, $parentType, $parentId)
+    {
+        $this->getClient()->get($this->createUri($parentType, $parentId, $type));
+    }
+
+    /**
+     * @When I retrieve all :type from :parentType with id :parentId and query string :query
+     *
+     * @param string $type
+     * @param string $parentType
+     * @param string $parentId
+     * @param string $query
+     *
+     * @return void
+     */
+    public function iRetrieveAllFromWithIdAndQueryString($type, $parentType, $parentId, $query)
+    {
+        $this->getClient()->get($this->createUri($parentType, $parentId, $type), parse_query($query, false));
+    }
+
+    /**
+     * @When I retrieve :type with id :id
+     *
+     * @param string $type
+     * @param string $id
+     *
+     * @return void
+     */
+    public function iRetrieveWithId($type, $id)
+    {
+        $this->getClient()->get($this->createUri($type, $id));
+    }
+
+    /**
+     * @When I retrieve :type with id :id and the query string :query
+     *
+     * @param string $type
+     * @param string $id
+     * @param string $query
+     *
+     * @return void
+     */
+    public function iRetrieveWithIdAndTheQueryString($type, $id, $query)
+    {
+        $this->getClient()->get($this->createUri($type, $id), parse_query($query, false));
+    }
+
+    /**
+     * @When I add a new :type with values:
+     *
+     * @param string    $type
+     * @param TableNode $values
+     *
+     * @return void
+     */
+    public function iAddANewWithValues($type, TableNode $values)
+    {
+        $uri  = $this->createUri($type);
+        $body = $this->entityFixtureContext->getDefaultEntityProperties($type);
+
+        foreach ($values->getRows() as list ($key, $values)) {
+            $body[$key] = $values;
+        }
+
+        $this->getClient()->post($uri, $body);
+    }
+
+    /**
+     * @When I add a new :type
+     *
+     * @param string $type
+     */
+    public function iAddANew($type)
+    {
+        $this->iAddANewWithValues($type, new TableNode([]));
+    }
+
+    /**
+     * @When I add a new :type to :parentType with id :id
+     *
+     * @param string $type
+     * @param string $parentType
+     * @param string $id
+     *
+     * @return void
+     */
+    public function iAddNewTo($type, $parentType, $id)
+    {
+        $this->iAddANewToAndTheValues($type, $parentType, $id, new TableNode([]));
+    }
+
+    /**
+     * @When I add a new :type to :parentType with id :id and the values:
+     *
+     * @param string    $type
+     * @param string    $parentType
+     * @param string    $id
+     * @param TableNode $values
+     */
+    public function iAddANewToAndTheValues($type, $parentType, $id, TableNode $values)
+    {
+        $uri  = $this->createUri($parentType, $id, $type);
+        $body = $this->entityFixtureContext->getDefaultEntityProperties($type);
+
+        foreach ($values->getRows() as list ($key, $values)) {
+            $body[$key] = $values;
+        }
+
+        $this->getClient()->post($uri, $body);
+    }
+
+    /**
+     * @When I update a :type with id :typeId from relation :parentType with id :parentId with values:
+     *
+     * @param string $type
+     * @param string $typeId
+     * @param string $parentType
+     * @param string $parentId
+     * @param TableNode $values
+     */
+    public function iUpdateATypeWithIdFromRelationParentTypeWithId($type, $typeId, $parentType, $parentId, TableNode $values)
+    {
+        $uri  = $this->createUri($parentType, $parentId, $type, $typeId);
+        $body = $this->entityFixtureContext->getDefaultEntityProperties($type);
+
+        foreach ($values->getRows() as list ($key, $values)) {
+            $body[$key] = $values;
+        }
+        
+        $this->getClient()->put($uri, $body);
+    }
+
+    /**
+     * @When I update a :type with id :id and the values:
+     *
+     * @param string    $type
+     * @param string    $id
+     * @param TableNode $values
+     */
+    public function iUpdateAWithIdAndTheValues($type, $id, TableNode $values)
+    {
+        $uri  = $this->createUri($type, $id);
+        $body = $this->entityFixtureContext->getDefaultEntityProperties($type);
+
+        foreach ($values->getRows() as list ($key, $values)) {
+            $body[$key] = $values;
+        }
+
+        $this->getClient()->put($uri, $body);
+    }
+
+    /**
+     * Update a resource from a json string
+     *
+     * @When /^I update a "([^"]*)" with id (\d+) with:$/
+     *
+     * @param string       $type
+     * @param string       $id
+     * @param PyStringNode $string
+     *
+     * @return void
+     */
+    public function iUpdateAWithIdWith($type, $id, PyStringNode $string)
+    {
+        // Make sure the developer provided valid json
+        Assertions::assertJson($string->getRaw());
+
+        $uri  = $this->createUri($type, $id);
+        $body = $this->entityFixtureContext->getDefaultEntityProperties($type);
+        $data = json_decode($string, true);
+
+        foreach ($data as $key => $value) {
+            $body[$key] = $value;
+        }
+
+        $this->getClient()->put($uri, $body);
+    }
+
+    /**
+     * Add a new resource from a json string
+     *
+     * @When /^I add a new "([^"]*)" with:$/
+     *
+     * @param string       $type
+     * @param PyStringNode $string
+     *
+     * @return void
+     */
+    public function iAddANewWith($type, PyStringNode $string)
+    {
+        // Make sure the developer provided valid json
+        Assertions::assertJson($string->getRaw());
+
+        $uri  = $this->createUri($type);
+        $body = $this->entityFixtureContext->getDefaultEntityProperties($type);
+        $data = json_decode($string, true);
+
+        foreach ($data as $key => $value) {
+            $body[$key] = $value;
+        }
+
+        $this->getClient()->post($uri, $body);
+    }
+
+    /**
+     * @When I partially update a :type with id :id and the values:
+     */
+    public function iPartiallyUpdateAWithIdAndTheValues($type, $id, TableNode $values)
+    {
+        $uri  = $this->createUri($type, $id);
+        $body = [];
+
+        foreach ($values->getRows() as list ($key, $values)) {
+            $body[$key] = $values;
+        }
+
+        $this->getClient()->patch($uri, $body);
+    }
+
+    /**
+     * @When I delete a :type with id :id
+     */
+    public function iDeleteAWithId($type, $id)
+    {
+        $uri = $this->createUri($type, $id);
+
+        $this->getClient()->delete($uri);
+    }
+
+    /**
+     * @When I remove a :type with id :typeId from relation :parentType with id :id
+     *
+     * @param string $type
+     * @param $typeId
+     * @param string $parentType
+     * @param $parentId
+     */
+    public function iRemoveATypeWithIdFromRelationParentTypeWithId($type, $typeId, $parentType, $parentId)
+    {
+        $uri  = $this->createUri($parentType, $parentId, $type, $typeId);
+
+        $this->getClient()->delete($uri);
+    }
+
+    /**
+     * @When I send a :action action with method :method
+     *
+     * @param string $action
+     * @param string $method
+     */
+    public function iSendAActionWithMethod($action, $method)
+    {
+        $this->sendRpcAction('/' . $action, $method);
+    }
+
+    /**
+     * @When I send a :action action to resource :type with id :id and method :method
+     *
+     * @param string $action
+     * @param string $type
+     * @param int $id
+     * @param string $method
+     */
+    public function iSendAActionToResourceWithIdAndMethod($action, $type, $id, $method)
+    {
+        $this->iSendAActionToResourceWithIdWithMethodAndValues($action, $type, $id, $method, new TableNode([]));
+    }
+
+    /**
+     * @When I send a :action action to resource :type with id :id and method :method with values:
+     *
+     * @param string $action
+     * @param string $type
+     * @param int $id
+     * @param string $method
+     * @param TableNode $values
+     */
+    public function iSendAActionToResourceWithIdWithMethodAndValues($action, $type, $id, $method, TableNode $values)
+    {
+        $body = [];
+
+        foreach ($values->getRows() as list ($key, $values)) {
+            $body[$key] = $values;
+        }
+
+        $uri = $this->createUri($type, $id);
+        $uri .= '/' . $action;
+
+        $this->sendRpcAction($uri, $method, $body);
+    }
+
+    /**
+     * @When I send a :action action to resource :type with id :id and method :method with:
+     *
+     * @param string $action
+     * @param string $type
+     * @param int $id
+     * @param string $method
+     * @param PyStringNode $string
+     */
+    public function iSendAActionToResourceWithIdWithMethodWith($action, $type, $id, $method, PyStringNode $string)
+    {
+        // Make sure the developer provided valid json
+        Assertions::assertJson($string->getRaw());
+
+        $body = $this->entityFixtureContext->getDefaultEntityProperties($type);
+        $data = json_decode($string, true);
+
+        foreach ($data as $key => $value) {
+            $body[$key] = $value;
+        }
+
+        $uri = $this->createUri($type, $id);
+        $uri .= '/' . $action;
+
+        $this->sendRpcAction($uri, $method, $body);
+    }
+
+    /**
+     * @param string $uri
+     * @param string $method
+     * @param array  $body
+     */
+    private function sendRpcAction($uri, $method, array $body = [])
+    {
+        // The method name is lower case letters
+        $method = strtolower($method);
+
+        $httpVerbs = [
+            'get',
+            'post',
+            'put',
+            'patch',
+            'delete'
+        ];
+
+        // Check if the provided method actually is an HTTP verb
+        if (!in_array($method, $httpVerbs)) {
+            throw new \InvalidArgumentException('The provided method is not a valid HTTP verb');
+        }
+
+        empty($body) ? $this->getClient()->{$method}($uri) : $this->getClient()->{$method}($uri, $body);
+    }
+
+    /**
+     * Generate the uri to a api resource or collection
+     *
+     * @param string      $type
+     * @param string|null $typeId
+     * @param string|null $subType
+     * @param string|null $subTypeId
+     *
+     * @return string
+     */
+    private function createUri($type, $typeId = null, $subType = null, $subTypeId = null)
+    {
+        $uri = '/';
+
+        $route = $this->entityFixtureContext->getEntityRoute($type);
+
+        if (!$route) {
+            $route = PluralisationUtil::pluralize($type);
+        }
+
+        $uri = $uri . $route;
+
+        if ($typeId) {
+            $uri = $uri . '/' . $typeId;
+        }
+
+        if ($typeId && $subType) {
+            $route = $this->entityFixtureContext->getEntityRoute($subType);
+
+            if (!$route) {
+                $route = PluralisationUtil::pluralize($subType);
+            }
+
+            $uri = $uri . '/' . $route;
+        }
+
+        if ($subTypeId) {
+            $uri = $uri . '/' . $subTypeId;
+        }
+
+        return $uri;
+    }
+
+    /**
+     * @Then I should receive an unauthorized error
+     */
+    public function iShouldReceiveAnUnauthorizedError()
+    {
+        try {
+            Assertions::assertEquals(401, $this->getClient()->lastResponse->getStatusCode());
+
+        } catch (PHPUnit_Framework_ExpectationFailedException $e) {
+
+            // Allows for easier debugging
+            echo $this->getClient()->lastResponse->getStatusCode() . PHP_EOL;
+            echo $this->getClient()->lastResponseBody;
+
+            throw $e;
+        }
+    }
+
+    /**
+     * @Then I should receive an error with statusCode :statusCode
+     */
+    public function iShouldReceiveAnErrorMessage($statusCode, $message = null)
+    {
+        try {
+            Assertions::assertEquals($statusCode, $this->getClient()->lastResponse->getStatusCode());
+
+            if ($message) {
+                Assertions::assertEquals($message, json_decode($this->getClient()->lastResponseBody, true)['message']);
+            }
+
+        } catch (PHPUnit_Framework_ExpectationFailedException $e) {
+
+            // Allows for easier debugging
+            echo $this->getClient()->lastResponse->getStatusCode() . PHP_EOL;
+            echo $this->getClient()->lastResponseBody;
+
+            throw $e;
+        }
+    }
+
+    /**
+     * @Then I should receive an error with statusCode :statusCode and message :message
+     */
+    public function iShouldReceiveAnErrorWithStatusCodeAndMessage($statusCode, $message)
+    {
+        return $this->iShouldReceiveAnErrorMessage($statusCode, $message);
+    }
+
+    /**
+     * @Then I should receive a validation error
+     */
+    public function iShouldReceiveAValidationError()
+    {
+        try {
+            Assertions::assertEquals(422, $this->getClient()->lastResponse->getStatusCode());
+
+        } catch (PHPUnit_Framework_ExpectationFailedException $e) {
+
+            // Allows for easier debugging
+            echo $this->getClient()->lastResponse->getStatusCode() . PHP_EOL;
+            echo $this->getClient()->lastResponseBody;
+
+            throw $e;
+        }
+    }
+
+    /**
+     * @Then /^I should receive a validation error with count (\d+)$/
+     */
+    public function iShouldReceiveAValidationErrorWithCount($count)
+    {
+        $responseBody = $this->getClient()->lastResponseBody;
+
+        try {
+            Assertions::assertJson($responseBody);
+            Assertions::assertEquals(422, $this->getClient()->lastResponse->getStatusCode());
+
+            Assertions::assertCount((int)$count, json_decode($responseBody, true)['errors']);
+
+        } catch (PHPUnit_Framework_ExpectationFailedException $e) {
+
+            // Allows for easier debugging
+            echo $this->getClient()->lastResponse->getStatusCode() . PHP_EOL;
+            echo $responseBody;
+
+            throw $e;
+        }
+    }
+
+    /**
+     * @Then /^I should receive a (\d+)$/
+     *
+     * @param int $statusCode
+     *
+     * @return void
+     */
+    public function iShouldReceiveA($statusCode)
+    {
+        try {
+            Assertions::assertEquals($statusCode, $this->getClient()->lastResponse->getStatusCode());
+        } catch (PHPUnit_Framework_ExpectationFailedException $e) {
+
+            // Allows for easier debugging
+            echo $this->getClient()->lastResponse->getStatusCode() . PHP_EOL;
+            echo $this->getClient()->lastResponseBody;
+
+            throw $e;
+        }
+    }
+
+    /**
+     * @Then /^I should receive a (\d+) with valid json$/
+     *
+     * @param int $statusCode
+     *
+     * @return void
+     */
+    public function iShouldReceiveAWithValidJson($statusCode)
+    {
+        $responseBody = $this->getClient()->lastResponseBody;
+
+        try {
+
+            Assertions::assertEquals($statusCode, $this->getClient()->lastResponse->getStatusCode());
+            Assertions::assertJson($responseBody);
+
+        } catch (PHPUnit_Framework_ExpectationFailedException $e) {
+
+            // Allows for easier debugging
+            echo $this->getClient()->lastResponse->getStatusCode() . PHP_EOL;
+            echo $responseBody;
+
+            throw $e;
+        }
+
+    }
+
+
+    /**
+     * @Given /^the response should match the request properties$/
+     */
+    public function theResponseShouldMatchTheRequestProperties()
+    {
+        if ($this->getClient()->lastRequestBody === null) {
+            throw new DomainException('No request body is available');
+        }
+
+        $responseBody = $this->getClient()->lastResponseBody;
+
+        try {
+            Assertions::assertJson($responseBody);
+        } catch (PHPUnit_Framework_ExpectationFailedException $e) {
+            echo $responseBody;
+        }
+
+        $json = json_decode($responseBody, true);
+
+        try {
+
+            foreach ($this->getClient()->lastRequestBody as $key => $value) {
+
+                // Updating the entity should ALWAYS change the updatedAt timestamp
+                if (in_array($key, ['updatedAt', 'password', 'repeatPassword'])) continue;
+
+                Assertions::assertArrayHasKey($key, $json);
+
+                if (is_bool($json[$key])) {
+                    Assertions::assertEquals((bool) $value, $json[$key]);
+                } else {
+                    Assertions::assertEquals($value, $json[$key]);
+                }
+            }
+
+        } catch (PHPUnit_Framework_ExpectationFailedException $e) {
+
+            // Easier debugging
+            print_r($json);
+
+            throw $e;
+        }
+    }
+
+    /**
+     * @Given /^it should contain (\d+) records$/
+     *
+     * @param int $records
+     *
+     * @return void
+     */
+    public function itShouldContainRecords($records)
+    {
+        $responseBody = $this->getClient()->lastResponseBody;
+
+        try {
+
+            Assertions::assertJson($responseBody);
+
+            $json = json_decode($responseBody, true);
+
+            Assertions::assertArrayHasKey('data', $json);
+            Assertions::assertCount((int)$records, $json['data']);
+
+        } catch (PHPUnit_Framework_ExpectationFailedException $e) {
+
+            // Allows for easier debugging
+            echo $this->getClient()->lastResponse->getStatusCode() . PHP_EOL;
+            echo $responseBody;
+
+            throw $e;
+        }
+    }
+
+    /**
+     * @Then /^it should match the following properties:$/
+     */
+    public function itShouldMatchTheFollowingProperties(TableNode $table)
+    {
+        $jsonString = $this->getClient()->lastResponseBody;
+
+        Assertions::assertJson($jsonString);
+
+        $json = json_decode($jsonString, true);
+
+        foreach ($table->getRows() as list ($key, $value)) {
+            // So we can detect checks for null values
+            $value = $value === 'null' ? null : $value;
+
+            Assertions::assertArrayHasKey($key, $json);
+
+            if (is_bool($json[$key])) {
+                Assertions::assertEquals((bool) $value, $json[$key]);
+            } else {
+                Assertions::assertEquals($value, $json[$key]);
+            }
+        }
+    }
+
+    /**
+     * @Then It should dump the last response
+     */
+    public function itShouldDumpTheLastResponse()
+    {
+        $responseBody = $this->getClient()->lastResponseBody;
+
+        var_dump($responseBody);
+    }
+}

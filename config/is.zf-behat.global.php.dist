@@ -1,0 +1,39 @@
+<?php
+/**
+ * @author Erik Norgren <erik.norgren@interactivesolutions.se>
+ * @copyright Interactive Solutions
+ */
+
+use InteractiveSolutions\ZfBehat\Options\EntityOptions;
+use InteractiveSolutions\ZfBehat\Options\UserOptions;
+
+return [
+    'interactive_solutions' => [
+        'options' => [
+            UserOptions::class => [
+                //The user entity class to use
+                //'userEntityClass' => '',
+                //'defaultUserProperties' => [
+                ],
+            ],
+            EntityOptions::class => [
+                // fill in the entity keys and their corresponding route/default values
+                'entities' => [
+                // example:
+                /* 'category' => [
+                        'aliases' => [
+                            'categories',
+                            'subcategory',
+                            'subcategories'
+                        ],
+                        'entity'  => CategoryEntity::class,
+                        'route'  => ''
+                        'defaultProperties' => [
+                            'name' => 'category name'
+                        ]
+                    ]*/
+                ]
+            ]
+        ]
+    ],
+];
