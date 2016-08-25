@@ -13,6 +13,9 @@ use DateTime;
 use Doctrine\Common\Persistence\Mapping\ClassMetadata;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
+use Doctrine\ORM\OptimisticLockException;
+use Doctrine\ORM\ORMException;
+use Doctrine\ORM\TransactionRequiredException;
 use InteractiveSolutions\ZfBehat\Options\EntityOptions;
 use RuntimeException;
 use Zend\ServiceManager\ServiceManager;
@@ -81,6 +84,8 @@ class EntityFixtureContext implements SnippetAcceptingContext, ServiceManagerAwa
      * on each time we update or modify a performer.
      *
      * @param $type
+     *
+     * @throws RuntimeException
      *
      * @return array
      */
@@ -163,7 +168,9 @@ class EntityFixtureContext implements SnippetAcceptingContext, ServiceManagerAwa
      *
      * @param string $type
      *
-     * @return void
+     * @throws ORMException
+     * @throws OptimisticLockException
+     * @throws TransactionRequiredException
      */
     public function anExisting($type)
     {
@@ -177,6 +184,10 @@ class EntityFixtureContext implements SnippetAcceptingContext, ServiceManagerAwa
      *
      * @param string    $type
      * @param TableNode $values
+     *
+     * @throws ORMException
+     * @throws OptimisticLockException
+     * @throws TransactionRequiredException
      *
      * @return void
      */
@@ -209,6 +220,10 @@ class EntityFixtureContext implements SnippetAcceptingContext, ServiceManagerAwa
      * @param string $parentType
      * @param string $parentId
      *
+     * @throws ORMException
+     * @throws OptimisticLockException
+     * @throws TransactionRequiredException
+     *
      * @return void
      */
     public function anExistingWithParent($type, $parentType, $parentId)
@@ -226,16 +241,23 @@ class EntityFixtureContext implements SnippetAcceptingContext, ServiceManagerAwa
      * @param string    $parentId
      * @param TableNode $values
      *
+     * @throws ORMException
+     * @throws OptimisticLockException
+     * @throws TransactionRequiredException
+     *
      * @return void
      */
     public function anExistingWithParentAndValues($type, $parentType, $parentId, TableNode $values)
     {
+        $options     = $this->getEntityOptions($type);
         $parentClass = $this->getEntityClass($parentType);
         $targetClass = $this->getEntityClass($type);
 
         $properties = $this->getDefaultEntityProperties($type);
         $metadata   = $this->entityManager->getClassMetadata($targetClass);
-        $hydrator   = $this->createEntityHydrator($metadata);
+
+        $hydrator = isset($options['hydrator']) ? new $options['hydrator'] : null;
+        $hydrator = $this->createEntityHydrator($metadata, $hydrator);
 
         foreach ($values->getRows() as list ($key, $value)) {
             $properties[$key] = $value;
@@ -258,8 +280,8 @@ class EntityFixtureContext implements SnippetAcceptingContext, ServiceManagerAwa
     /**
      * Add the parent entity using the doctrine metadata on the target entity
      *
-     * @param object $targetEntity
-     * @param object $parentEntity
+     * @param object            $targetEntity
+     * @param object            $parentEntity
      * @param ClassMetadataInfo $targetMetadata
      * @param ClassMetadataInfo $parentMetadata
      *

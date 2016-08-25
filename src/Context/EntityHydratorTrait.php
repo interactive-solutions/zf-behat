@@ -12,19 +12,22 @@ use Doctrine\DBAL\Types\Type;
 use InteractiveSolutions\Stdlib\Hydrator\Strategy\DateTimeStrategy;
 use InteractiveSolutions\ZfBehat\Stdlib\HydratorStrategy\BooleanStrategy;
 use InteractiveSolutions\ZfBehat\Stdlib\HydratorStrategy\SimpleArrayStrategy;
-use Zend\Stdlib\Hydrator\ClassMethods;
-use Zend\Stdlib\Hydrator\HydratorInterface;
+use Zend\Hydrator\ClassMethods;
+use Zend\Hydrator\HydratorInterface;
 
 trait EntityHydratorTrait
 {
     /**
      * Get the default hydrator
      *
+     * @param ClassMetadata     $metadata
+     * @param HydratorInterface $hydrator
+     *
      * @return HydratorInterface
      */
-    private function createEntityHydrator(ClassMetadata $metadata)
+    private function createEntityHydrator(ClassMetadata $metadata, HydratorInterface $hydrator = null)
     {
-        $hydrator = new ClassMethods();
+        $hydrator = $hydrator ?: new ClassMethods();
 
         foreach ($metadata->getFieldNames() as $field) {
 
