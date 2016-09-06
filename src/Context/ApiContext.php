@@ -10,6 +10,7 @@ use Behat\Behat\Context\SnippetAcceptingContext;
 use Behat\Behat\Hook\Scope\BeforeScenarioScope;
 use Behat\Gherkin\Node\PyStringNode;
 use Behat\Gherkin\Node\TableNode;
+use Closure;
 use DomainException;
 use InteractiveSolutions\ZfBehat\Assertions;
 use InteractiveSolutions\ZfBehat\Context\Aware\ApiClientAwareInterface;
@@ -203,6 +204,27 @@ class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, Se
         }
 
         $this->getClient()->post($uri, $body);
+    }
+
+    /**
+     * @When I add a new :type to :parentType with alias :alias and field :field
+     *
+     * @param $type
+     * @param $parentType
+     * @param $alias
+     * @param $field
+     */
+    public function iAddANewToAlias($type, $parentType, $alias, $field)
+    {
+        $parent   = $this->entityFixtureContext->getAlias($alias);
+
+        $getValue = function ($object, $field) {
+            return $object->{$field};
+        };
+
+        $getValue = Closure::bind($getValue, null, $parent);
+
+        $this->iAddNewTo($type, $parentType, $getValue($parent, $field));
     }
 
     /**

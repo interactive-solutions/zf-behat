@@ -26,6 +26,11 @@ class EntityFixtureContext implements SnippetAcceptingContext, ServiceManagerAwa
     use EntityHydratorTrait;
 
     /**
+     * @var array
+     */
+    private $aliases;
+
+    /**
      * @var EntityManager
      */
     private $entityManager;
@@ -52,6 +57,31 @@ class EntityFixtureContext implements SnippetAcceptingContext, ServiceManagerAwa
     public function bootstrap(BeforeScenarioScope $scope)
     {
         $this->entityManager = $scope->getEnvironment()->getContext(DatabaseContext::class)->getEntityManager();
+    }
+
+    /**
+     * Get an alias
+     *
+     * @param $alias
+     * @return mixed
+     */
+    public function getAlias($alias)
+    {
+        if (!array_key_exists($alias, $this->aliases)) {
+            throw new RuntimeException('Alias not found');
+        }
+
+        return $this->aliases[$alias];
+    }
+
+    /**
+     * Reset the alias list
+     *
+     * @BeforeScenario
+     */
+    public function resetAliases()
+    {
+        $this->aliases = [];
     }
 
     /**
@@ -171,10 +201,12 @@ class EntityFixtureContext implements SnippetAcceptingContext, ServiceManagerAwa
      * @throws ORMException
      * @throws OptimisticLockException
      * @throws TransactionRequiredException
+     *
+     * @return mixed
      */
     public function anExisting($type)
     {
-        $this->anExistingWithValues($type, new TableNode([]));
+        return $this->anExistingWithValues($type, new TableNode([]));
     }
 
     /**
@@ -189,7 +221,7 @@ class EntityFixtureContext implements SnippetAcceptingContext, ServiceManagerAwa
      * @throws OptimisticLockException
      * @throws TransactionRequiredException
      *
-     * @return void
+     * @return mixed
      */
     public function anExistingWithValues($type, TableNode $values)
     {
@@ -209,6 +241,83 @@ class EntityFixtureContext implements SnippetAcceptingContext, ServiceManagerAwa
 
         $this->entityManager->persist($entity);
         $this->entityManager->flush();
+
+        return $entity;
+    }
+
+    /**
+     * Add a entity of the given type with the default values with an alias
+     *
+     * @Given an existing :type as :alias
+     *
+     * @param string $type
+     *
+     * @param $alias
+     * @throws \Doctrine\ORM\ORMException
+     */
+    public function anExistingAs($type, $alias)
+    {
+        $entity = $this->anExisting($type);
+
+        $this->aliases[$alias] = $entity;
+    }
+
+    /**
+     * Add a entity of the given type with values and an alias
+     *
+     * @Given an existing :type as :alias with values:
+     *
+     * @param string $type
+     * @param $alias
+     * @param TableNode $values
+     * @throws \Doctrine\ORM\ORMException
+     */
+    public function anExistingAsWithValues($type, $alias, TableNode $values)
+    {
+        $entity = $this->anExistingWithValues($type, $values);
+
+        $this->aliases[$alias] = $entity;
+    }
+
+    /**
+     * Add an entity of a given type with default values into an aliased array
+     *
+     * @Given an existing :type in :alias
+     *
+     * @param $type
+     * @param $alias
+     * @throws \Doctrine\ORM\ORMException
+     */
+    public function anExistingIn($type, $alias)
+    {
+        $entity = $this->anExisting($type);
+
+        if (!array_key_exists($alias, $this->aliases)) {
+            $this->aliases[$alias] = [];
+        }
+
+        $this->aliases[] = $entity;
+    }
+
+    /**
+     * Add an entity of a given type into an aliased array
+     *
+     * @Given an existing :type in :alias with values:
+     *
+     * @param $type
+     * @param $alias
+     * @param TableNode $values
+     * @throws \Doctrine\ORM\ORMException
+     */
+    public function anExistingInWithValues($type, $alias, TableNode $values)
+    {
+        $entity = $this->anExistingWithValues($type, $values);
+
+        if (!array_key_exists($alias, $this->aliases)) {
+            $this->aliases[$alias] = [];
+        }
+
+        $this->aliases[] = $entity;
     }
 
     /**
@@ -272,6 +381,57 @@ class EntityFixtureContext implements SnippetAcceptingContext, ServiceManagerAwa
         $targetMetadata = $this->entityManager->getClassMetadata($targetClass);
 
         $this->setAssociation($targetEntity, $parentEntity, $targetMetadata, $parentMetadata);
+
+        $this->entityManager->persist($targetEntity);
+        $this->entityManager->flush();
+    }
+
+    /**
+     * Add an entity with an association and default values to a parent entity with alias
+     *
+     * @Given an existing :type on alias :alias
+     *
+     * @param $type
+     * @param $alias
+     */
+    public function anExistingOnAlias($type, $alias)
+    {
+        $this->anExistingOnAliasWithValues($type, $alias, new TableNode([]));
+    }
+
+    /**
+     * Add an entity with a association to a parent entity with alias
+     *
+     * @Given an existing :type on alias :alias with values:
+     *
+     * @param string $type
+     * @param $alias
+     * @param TableNode $values
+     */
+    public function anExistingOnAliasWithValues($type, $alias, TableNode $values)
+    {
+        $options     = $this->getEntityOptions($type);
+        $targetClass = $this->getEntityClass($type);
+
+        $properties = $this->getDefaultEntityProperties($type);
+        $metadata   = $this->entityManager->getClassMetadata($targetClass);
+
+        $hydrator = isset($options['hydrator']) ? new $options['hydrator'] : null;
+        $hydrator = $this->createEntityHydrator($metadata, $hydrator);
+
+        foreach ($values->getRows() as list ($key, $value)) {
+            $properties[$key] = $value;
+        }
+
+        $targetEntity = $hydrator->hydrate($properties, new $targetClass());
+        $this->ensureEntityTimestamps($targetEntity);
+
+        $parent = $this->getAlias($alias);
+
+        $parentMetadata = $this->entityManager->getClassMetadata(get_class($parent));
+        $targetMetadata = $this->entityManager->getClassMetadata($targetClass);
+
+        $this->setAssociation($targetEntity, $parent, $targetMetadata, $parentMetadata);
 
         $this->entityManager->persist($targetEntity);
         $this->entityManager->flush();
