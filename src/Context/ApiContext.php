@@ -10,6 +10,7 @@ use Behat\Behat\Context\SnippetAcceptingContext;
 use Behat\Behat\Hook\Scope\BeforeScenarioScope;
 use Behat\Gherkin\Node\PyStringNode;
 use Behat\Gherkin\Node\TableNode;
+use Closure;
 use DomainException;
 use InteractiveSolutions\ZfBehat\Assertions;
 use InteractiveSolutions\ZfBehat\Context\Aware\ApiClientAwareInterface;
@@ -115,6 +116,42 @@ class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, Se
     }
 
     /**
+     * @When I retrieve all :type from :parentType with alias :alias
+     *
+     * @param $type
+     * @param $parentType
+     * @param $alias
+     */
+    public function iRetrieveAllFromWithAlias($type, $parentType, $alias)
+    {
+        $parent         = $this->entityFixtureContext->getEntityFromAlias($alias);
+        $parentIdColumn = $this->entityFixtureContext->getPrimaryKeyColumnOfEntity($parent);
+
+        $this->iRetrieveAllFrom($type, $parentType, $this->getFieldOfObject($parent, $parentIdColumn));
+    }
+
+    /**
+     * @When I retrieve all :type from :parentType with alias :alias and query string :query
+     *
+     * @param $type
+     * @param $parentType
+     * @param $alias
+     * @param $query
+     */
+    public function iRetrieveAllFromWithAliasAndQueryString($type, $parentType, $alias, $query)
+    {
+        $parent         = $this->entityFixtureContext->getEntityFromAlias($alias);
+        $parentIdColumn = $this->entityFixtureContext->getPrimaryKeyColumnOfEntity($parent);
+
+        $this->iRetrieveAllFromWithIdAndQueryString(
+            $type,
+            $parentType,
+            $this->getFieldOfObject($parent, $parentIdColumn),
+            $query
+        );
+    }
+
+    /**
      * @When I retrieve :type with id :id
      *
      * @param string $type
@@ -142,9 +179,38 @@ class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, Se
     }
 
     /**
+     * @When I retrieve :type with :alias
+     *
+     * @param $type
+     * @param $alias
+     */
+    public function iRetrieveWithAlias($type, $alias)
+    {
+        $parent         = $this->entityFixtureContext->getEntityFromAlias($alias);
+        $parentIdColumn = $this->entityFixtureContext->getPrimaryKeyColumnOfEntity($parent);
+
+        $this->iRetrieveWithId($type, $this->getFieldOfObject($parent, $parentIdColumn));
+    }
+
+    /**
+     * @When I retrieve :type with alias :alias and the query string :query
+     *
+     * @param $type
+     * @param $alias
+     * @param $query
+     */
+    public function iRetrieveWithAliasAndTheQueryString($type, $alias, $query)
+    {
+        $parent         = $this->entityFixtureContext->getEntityFromAlias($alias);
+        $parentIdColumn = $this->entityFixtureContext->getPrimaryKeyColumnOfEntity($parent);
+
+        $this->iRetrieveWithIdAndTheQueryString($type, $this->getFieldOfObject($parent, $parentIdColumn), $query);
+    }
+
+    /**
      * @When I add a new :type with values:
      *
-     * @param string    $type
+     * @param string $type
      * @param TableNode $values
      *
      * @return void
@@ -188,9 +254,9 @@ class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, Se
     /**
      * @When I add a new :type to :parentType with id :id and the values:
      *
-     * @param string    $type
-     * @param string    $parentType
-     * @param string    $id
+     * @param string $type
+     * @param string $parentType
+     * @param string $id
      * @param TableNode $values
      */
     public function iAddANewToAndTheValues($type, $parentType, $id, TableNode $values)
@@ -203,6 +269,32 @@ class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, Se
         }
 
         $this->getClient()->post($uri, $body);
+    }
+
+    /**
+     * @When I add a new :type to :parentType with alias :alias
+     *
+     * @param $type
+     * @param $parentType
+     * @param $alias
+     */
+    public function iAddANewToAlias($type, $parentType, $alias)
+    {
+        $this->iAddANewToAliasWithValues($type, $parentType, $alias, new TableNode([]));
+    }
+
+    /**
+     * @param $type
+     * @param $parentType
+     * @param $alias
+     * @param TableNode $values
+     */
+    public function iAddANewToAliasWithValues($type, $parentType, $alias, TableNode $values)
+    {
+        $parent         = $this->entityFixtureContext->getEntityFromAlias($alias);
+        $parentIdColumn = $this->entityFixtureContext->getPrimaryKeyColumnOfEntity($parent);
+
+        $this->iAddANewToAndTheValues($type, $parentType, $this->getFieldOfObject($parent, $parentIdColumn), $values);
     }
 
     /**
@@ -222,15 +314,15 @@ class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, Se
         foreach ($values->getRows() as list ($key, $values)) {
             $body[$key] = $values;
         }
-        
+
         $this->getClient()->put($uri, $body);
     }
 
     /**
      * @When I update a :type with id :id and the values:
      *
-     * @param string    $type
-     * @param string    $id
+     * @param string $type
+     * @param string $id
      * @param TableNode $values
      */
     public function iUpdateAWithIdAndTheValues($type, $id, TableNode $values)
@@ -246,12 +338,27 @@ class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, Se
     }
 
     /**
+     * @When I update a :type with alias :alias and the values:
+     *
+     * @param $type
+     * @param $alias
+     * @param TableNode $values
+     */
+    public function iUpdateAWithAliasAndTheValues($type, $alias, TableNode $values)
+    {
+        $parent         = $this->entityFixtureContext->getEntityFromAlias($alias);
+        $parentIdColumn = $this->entityFixtureContext->getPrimaryKeyColumnOfEntity($parent);
+
+        $this->iUpdateAWithIdAndTheValues($type, $this->getFieldOfObject($parent, $parentIdColumn), $values);
+    }
+
+    /**
      * Update a resource from a json string
      *
      * @When /^I update a "([^"]*)" with id (\d+) with:$/
      *
-     * @param string       $type
-     * @param string       $id
+     * @param string $type
+     * @param string $id
      * @param PyStringNode $string
      *
      * @return void
@@ -273,11 +380,26 @@ class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, Se
     }
 
     /**
+     * @When I update a :type with alias :alias with:
+     *
+     * @param $type
+     * @param $alias
+     * @param PyStringNode $string
+     */
+    public function iUpdateAWithAliasWith($type, $alias, PyStringNode $string)
+    {
+        $parent         = $this->entityFixtureContext->getEntityFromAlias($alias);
+        $parentIdColumn = $this->entityFixtureContext->getPrimaryKeyColumnOfEntity($parent);
+
+        $this->iUpdateAWithIdWith($type, $this->getFieldOfObject($parent, $parentIdColumn), $string);
+    }
+
+    /**
      * Add a new resource from a json string
      *
      * @When /^I add a new "([^"]*)" with:$/
      *
-     * @param string       $type
+     * @param string $type
      * @param PyStringNode $string
      *
      * @return void
@@ -314,6 +436,21 @@ class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, Se
     }
 
     /**
+     * @When I partially update a :type with alias :alias and the values:
+     *
+     * @param $type
+     * @param $alias
+     * @param TableNode $values
+     */
+    public function iPartiallyUpdateAWithAliasAndTheValues($type, $alias, TableNode $values)
+    {
+        $parent         = $this->entityFixtureContext->getEntityFromAlias($alias);
+        $parentIdColumn = $this->entityFixtureContext->getPrimaryKeyColumnOfEntity($parent);
+
+        $this->iPartiallyUpdateAWithIdAndTheValues($type, $this->getFieldOfObject($parent, $parentIdColumn), $values);
+    }
+
+    /**
      * @When I delete a :type with id :id
      */
     public function iDeleteAWithId($type, $id)
@@ -321,6 +458,20 @@ class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, Se
         $uri = $this->createUri($type, $id);
 
         $this->getClient()->delete($uri);
+    }
+
+    /**
+     * @When I delete a :type with alias :alias
+     *
+     * @param $type
+     * @param $alias
+     */
+    public function iDeleteAWithAlias($type, $alias)
+    {
+        $parent         = $this->entityFixtureContext->getEntityFromAlias($alias);
+        $parentIdColumn = $this->entityFixtureContext->getPrimaryKeyColumnOfEntity($parent);
+
+        $this->iDeleteAWithId($type, $this->getFieldOfObject($parent, $parentIdColumn));
     }
 
     /**
@@ -333,7 +484,7 @@ class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, Se
      */
     public function iRemoveATypeWithIdFromRelationParentTypeWithId($type, $typeId, $parentType, $parentId)
     {
-        $uri  = $this->createUri($parentType, $parentId, $type, $typeId);
+        $uri = $this->createUri($parentType, $parentId, $type, $typeId);
 
         $this->getClient()->delete($uri);
     }
@@ -412,10 +563,56 @@ class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, Se
         $this->sendRpcAction($uri, $method, $body);
     }
 
+    public function iSendAActionToResourceWithAliasAndMethod($action, $type, $alias, $method)
+    {
+        $parent         = $this->entityFixtureContext->getEntityFromAlias($alias);
+        $parentIdColumn = $this->entityFixtureContext->getPrimaryKeyColumnOfEntity($parent);
+
+        $this->iSendAActionToResourceWithIdAndMethod(
+            $action,
+            $type,
+            $this->getFieldOfObject($parent, $parentIdColumn),
+            $method
+        );
+    }
+
+    public function iSendAActionToResourceWithAliasWithMethodAndValues(
+        $action,
+        $type,
+        $alias,
+        $method,
+        TableNode $values)
+    {
+        $parent         = $this->entityFixtureContext->getEntityFromAlias($alias);
+        $parentIdColumn = $this->entityFixtureContext->getPrimaryKeyColumnOfEntity($parent);
+
+        $this->iSendAActionToResourceWithIdWithMethodAndValues(
+            $action,
+            $type,
+            $this->getFieldOfObject($parent, $parentIdColumn),
+            $method,
+            $values
+        );
+    }
+
+    public function iSendAActionToResourceWithAliasANdMethodWith($action, $type, $alias, $method, PyStringNode $string)
+    {
+        $parent         = $this->entityFixtureContext->getEntityFromAlias($alias);
+        $parentIdColumn = $this->entityFixtureContext->getPrimaryKeyColumnOfEntity($parent);
+
+        $this->iSendAActionToResourceWithIdWithMethodWith(
+            $action,
+            $type,
+            $this->getFieldOfObject($parent, $parentIdColumn),
+            $method,
+            $string
+        );
+    }
+
     /**
      * @param string $uri
      * @param string $method
-     * @param array  $body
+     * @param array $body
      */
     private function sendRpcAction($uri, $method, array $body = [])
     {
@@ -427,7 +624,7 @@ class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, Se
             'post',
             'put',
             'patch',
-            'delete'
+            'delete',
         ];
 
         // Check if the provided method actually is an HTTP verb
@@ -441,7 +638,7 @@ class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, Se
     /**
      * Generate the uri to a api resource or collection
      *
-     * @param string      $type
+     * @param string $type
      * @param string|null $typeId
      * @param string|null $subType
      * @param string|null $subTypeId
@@ -558,7 +755,7 @@ class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, Se
             Assertions::assertJson($responseBody);
             Assertions::assertEquals(422, $this->getClient()->lastResponse->getStatusCode());
 
-            Assertions::assertCount((int)$count, json_decode($responseBody, true)['errors']);
+            Assertions::assertCount((int) $count, json_decode($responseBody, true)['errors']);
 
         } catch (PHPUnit_Framework_ExpectationFailedException $e) {
 
@@ -681,7 +878,7 @@ class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, Se
             $json = json_decode($responseBody, true);
 
             Assertions::assertArrayHasKey('data', $json);
-            Assertions::assertCount((int)$records, $json['data']);
+            Assertions::assertCount((int) $records, $json['data']);
 
         } catch (PHPUnit_Framework_ExpectationFailedException $e) {
 
@@ -726,5 +923,24 @@ class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, Se
         $responseBody = $this->getClient()->lastResponseBody;
 
         var_dump($responseBody);
+    }
+
+    /**
+     * Binds an anonymous function to an object, allowing us to access
+     * instance variables directly
+     *
+     * @param $object
+     * @param $field
+     * @return mixed
+     */
+    private function getFieldOfObject($object, $field)
+    {
+        $getValue = function ($object, $field) {
+            return $object->{$field};
+        };
+
+        $getValue = Closure::bind($getValue, null, $object);
+
+        return $getValue($object, $field);
     }
 }
