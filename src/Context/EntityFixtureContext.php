@@ -65,7 +65,7 @@ class EntityFixtureContext implements SnippetAcceptingContext, ServiceManagerAwa
      * @param $alias
      * @return mixed
      */
-    public function getAlias($alias)
+    public function getEntityFromAlias(string $alias)
     {
         if (!array_key_exists($alias, $this->aliases)) {
             throw new RuntimeException('Alias not found');
@@ -158,6 +158,19 @@ class EntityFixtureContext implements SnippetAcceptingContext, ServiceManagerAwa
         }
 
         return $this->options->getEntities()[$type];
+    }
+
+    /**
+     * Retrieves the primary key column of an entity
+     *
+     * @param $entity
+     *
+     * @return string
+     * @throws \Doctrine\ORM\Mapping\MappingException
+     */
+    public function getPrimaryKeyColumnOfEntity($entity)
+    {
+        return $this->entityManager->getClassMetadata(get_class($entity))->getSingleIdentifierColumnName();
     }
 
     /**
@@ -426,7 +439,7 @@ class EntityFixtureContext implements SnippetAcceptingContext, ServiceManagerAwa
         $targetEntity = $hydrator->hydrate($properties, new $targetClass());
         $this->ensureEntityTimestamps($targetEntity);
 
-        $parent = $this->getAlias($alias);
+        $parent = $this->getEntityFromAlias($alias);
 
         $parentMetadata = $this->entityManager->getClassMetadata(get_class($parent));
         $targetMetadata = $this->entityManager->getClassMetadata($targetClass);
