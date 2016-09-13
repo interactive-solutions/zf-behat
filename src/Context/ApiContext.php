@@ -563,6 +563,14 @@ class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, Se
         $this->sendRpcAction($uri, $method, $body);
     }
 
+    /**
+     * @When I send a :action action to resource :type with alias :alias and method :method
+     *
+     * @param $action
+     * @param $type
+     * @param $alias
+     * @param $method
+     */
     public function iSendAActionToResourceWithAliasAndMethod($action, $type, $alias, $method)
     {
         $parent         = $this->entityFixtureContext->getEntityFromAlias($alias);
@@ -576,6 +584,15 @@ class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, Se
         );
     }
 
+    /**
+     * @When I send a :action action to resource :type with alias :alias and method :method with values:
+     *
+     * @param $action
+     * @param $type
+     * @param $alias
+     * @param $method
+     * @param TableNode $values
+     */
     public function iSendAActionToResourceWithAliasWithMethodAndValues(
         $action,
         $type,
@@ -595,7 +612,16 @@ class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, Se
         );
     }
 
-    public function iSendAActionToResourceWithAliasANdMethodWith($action, $type, $alias, $method, PyStringNode $string)
+    /**
+     * @When I send a :action action to resource :type with alias :alias and method :method with:
+     *
+     * @param $action
+     * @param $type
+     * @param $alias
+     * @param $method
+     * @param PyStringNode $string
+     */
+    public function iSendAActionToResourceWithAliasAndMethodWith($action, $type, $alias, $method, PyStringNode $string)
     {
         $parent         = $this->entityFixtureContext->getEntityFromAlias($alias);
         $parentIdColumn = $this->entityFixtureContext->getPrimaryKeyColumnOfEntity($parent);
