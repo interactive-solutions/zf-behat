@@ -179,7 +179,7 @@ class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, Se
     }
 
     /**
-     * @When I retrieve :type with :alias
+     * @When I retrieve :type with alias :alias
      *
      * @param $type
      * @param $alias
