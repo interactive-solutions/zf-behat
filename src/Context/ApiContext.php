@@ -284,6 +284,8 @@ class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, Se
     }
 
     /**
+     * @When I add a new :type to :parentType with alias :alias and values:
+     *
      * @param $type
      * @param $parentType
      * @param $alias
