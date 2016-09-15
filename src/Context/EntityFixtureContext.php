@@ -145,11 +145,9 @@ class EntityFixtureContext implements SnippetAcceptingContext, ServiceManagerAwa
      */
     public function getEntityOptions($type)
     {
-        $hasKey = array_key_exists($type, $this->options->getEntities());
-
-        if (!$hasKey) {
+        if (!array_key_exists($type, $this->options->getEntities())) {
             foreach ($this->options->getEntities() as $entity) {
-                if (in_array($type, $entity['aliases'])) {
+                if (array_key_exists('aliases', $entity) && in_array($type, $entity['aliases'], false)) {
                     return $entity;
                 }
             }
