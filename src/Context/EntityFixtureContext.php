@@ -224,7 +224,7 @@ class EntityFixtureContext implements SnippetAcceptingContext, ServiceManagerAwa
     /**
      * Add a entity of the given type with the default values created with the entities static method
      *
-     * @Given an existing :type with static method :staticMethodName
+     * @Given an existing :type created with static method :staticMethodName
      *
      * @param string $type
      *
@@ -234,7 +234,7 @@ class EntityFixtureContext implements SnippetAcceptingContext, ServiceManagerAwa
      *
      * @return mixed
      */
-    public function anExistingTypeWithStaticMethod($type, $staticMethodName)
+    public function anExistingTypeCreatedWithStaticMethod($type, $staticMethodName)
     {
         $entityClass = $this->getEntityClass($type);
 
