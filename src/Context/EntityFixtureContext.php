@@ -220,6 +220,34 @@ class EntityFixtureContext implements SnippetAcceptingContext, ServiceManagerAwa
         return $this->anExistingWithValues($type, new TableNode([]));
     }
 
+
+    /**
+     * Add a entity of the given type with the default values created with the entities static method
+     *
+     * @Given an existing :type created with static method :staticMethodName
+     *
+     * @param string $type
+     *
+     * @throws ORMException
+     * @throws OptimisticLockException
+     * @throws TransactionRequiredException
+     *
+     * @return mixed
+     */
+    public function anExistingTypeCreatedWithStaticMethod($type, $staticMethodName)
+    {
+        $entityClass = $this->getEntityClass($type);
+
+        $values = $this->getDefaultEntityProperties($type);
+
+        $entity = (new $entityClass())::$staticMethodName($values);
+
+        $this->entityManager->persist($entity);
+        $this->entityManager->flush();
+
+        return $entity;
+    }
+
     /**
      * Add a entity of the given type and merging the default values with the new ones
      *
