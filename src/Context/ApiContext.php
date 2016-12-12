@@ -11,12 +11,14 @@ use Behat\Behat\Hook\Scope\BeforeScenarioScope;
 use Behat\Gherkin\Node\PyStringNode;
 use Behat\Gherkin\Node\TableNode;
 use Closure;
+use Doctrine\ORM\EntityManager;
 use DomainException;
 use InteractiveSolutions\ZfBehat\Assertions;
 use InteractiveSolutions\ZfBehat\Context\Aware\ApiClientAwareInterface;
 use InteractiveSolutions\ZfBehat\Context\Aware\ApiClientAwareTrait;
 use InteractiveSolutions\ZfBehat\Util\PluralisationUtil;
 use PHPUnit_Framework_ExpectationFailedException;
+use RuntimeException;
 use Zend\ServiceManager\ServiceManager;
 use Zend\ServiceManager\ServiceManagerAwareInterface;
 use function GuzzleHttp\Psr7\parse_query;
@@ -41,6 +43,11 @@ class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, Se
     private $serviceManager;
 
     /**
+     * @var EntityManager
+     */
+    private $entityManager;
+
+    /**
      * Inject the other contexts
      *
      * @BeforeScenario
@@ -53,6 +60,7 @@ class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, Se
     {
         $this->userFixtureContext   = $scope->getEnvironment()->getContext(UserFixtureContext::class);
         $this->entityFixtureContext = $scope->getEnvironment()->getContext(EntityFixtureContext::class);
+        $this->entityManager        = $scope->getEnvironment()->getContext(DatabaseContext::class)->getEntityManager();
     }
 
     /**
@@ -63,6 +71,40 @@ class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, Se
     public function setServiceManager(ServiceManager $serviceManager)
     {
         $this->serviceManager = $serviceManager;
+    }
+
+    /**
+     * This will check if the value should be considered a alias, and if so, convert the value to the specified alias field
+     *
+     * @param $value
+     *
+     * @throws RuntimeException
+     * @return string
+     */
+    private function convertValueToAlias($value)
+    {
+        if (!(strpos($value, '%') === 0) && !(strpos(strrev($value), '%') === 0)) {
+            return $value;
+        }
+
+        // Remove the last and first characters
+        $value = substr($value, 1, -1);
+
+        // Covers the case when a field is not specified
+        $alias = $value;
+        $field = null;
+
+        if (strpos($value, ':') !== 0) {
+            list($alias, $field) = explode(':', $value);
+        }
+
+        $entity = $this->entityFixtureContext->getEntityFromAlias($alias);
+
+        if (!$field) {
+            $field = $this->entityManager->getClassMetadata(get_class($entity))->getSingleIdentifierColumnName();
+        }
+
+        return $this->getFieldOfObject($entity, $field);
     }
 
     /**
@@ -221,7 +263,7 @@ class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, Se
         $body = $this->entityFixtureContext->getDefaultEntityProperties($type);
 
         foreach ($values->getRows() as list ($key, $values)) {
-            $body[$key] = $values;
+            $body[$key] = $this->convertValueToAlias($values);
         }
 
         $this->getClient()->post($uri, $body);
@@ -265,7 +307,7 @@ class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, Se
         $body = $this->entityFixtureContext->getDefaultEntityProperties($type);
 
         foreach ($values->getRows() as list ($key, $values)) {
-            $body[$key] = $values;
+            $body[$key] = $this->convertValueToAlias($values);
         }
 
         $this->getClient()->post($uri, $body);
@@ -314,7 +356,7 @@ class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, Se
         $body = $this->entityFixtureContext->getDefaultEntityProperties($type);
 
         foreach ($values->getRows() as list ($key, $values)) {
-            $body[$key] = $values;
+            $body[$key] = $this->convertValueToAlias($values);
         }
 
         $this->getClient()->put($uri, $body);
@@ -333,7 +375,7 @@ class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, Se
         $body = $this->entityFixtureContext->getDefaultEntityProperties($type);
 
         foreach ($values->getRows() as list ($key, $values)) {
-            $body[$key] = $values;
+            $body[$key] = $this->convertValueToAlias($values);
         }
 
         $this->getClient()->put($uri, $body);
@@ -375,7 +417,7 @@ class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, Se
         $data = json_decode($string, true);
 
         foreach ($data as $key => $value) {
-            $body[$key] = $value;
+            $body[$key] = $this->convertValueToAlias($value);
         }
 
         $this->getClient()->put($uri, $body);
@@ -416,7 +458,7 @@ class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, Se
         $data = json_decode($string, true);
 
         foreach ($data as $key => $value) {
-            $body[$key] = $value;
+            $body[$key] = $this->convertValueToAlias($value);
         }
 
         $this->getClient()->post($uri, $body);
@@ -431,7 +473,7 @@ class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, Se
         $body = [];
 
         foreach ($values->getRows() as list ($key, $values)) {
-            $body[$key] = $values;
+            $body[$key] = $this->convertValueToAlias($values);
         }
 
         $this->getClient()->patch($uri, $body);
@@ -529,7 +571,7 @@ class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, Se
         $body = [];
 
         foreach ($values->getRows() as list ($key, $values)) {
-            $body[$key] = $values;
+            $body[$key] = $this->convertValueToAlias($values);
         }
 
         $uri = $this->createUri($type, $id);
@@ -556,7 +598,7 @@ class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, Se
         $data = json_decode($string, true);
 
         foreach ($data as $key => $value) {
-            $body[$key] = $value;
+            $body[$key] = $this->convertValueToAlias($value);
         }
 
         $uri = $this->createUri($type, $id);
@@ -783,7 +825,7 @@ class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, Se
             Assertions::assertJson($responseBody);
             Assertions::assertEquals(422, $this->getClient()->lastResponse->getStatusCode());
 
-            Assertions::assertCount((int) $count, json_decode($responseBody, true)['errors']);
+            Assertions::assertCount((int)$count, json_decode($responseBody, true)['errors']);
 
         } catch (PHPUnit_Framework_ExpectationFailedException $e) {
 
@@ -873,7 +915,7 @@ class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, Se
                 Assertions::assertArrayHasKey($key, $json);
 
                 if (is_bool($json[$key])) {
-                    Assertions::assertEquals((bool) $value, $json[$key]);
+                    Assertions::assertEquals((bool)$value, $json[$key]);
                 } else {
                     Assertions::assertEquals($value, $json[$key]);
                 }
@@ -906,7 +948,7 @@ class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, Se
             $json = json_decode($responseBody, true);
 
             Assertions::assertArrayHasKey('data', $json);
-            Assertions::assertCount((int) $records, $json['data']);
+            Assertions::assertCount((int)$records, $json['data']);
 
         } catch (PHPUnit_Framework_ExpectationFailedException $e) {
 
@@ -936,7 +978,7 @@ class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, Se
             Assertions::assertArrayHasKey($key, $json);
 
             if (is_bool($json[$key])) {
-                Assertions::assertEquals((bool) $value, $json[$key]);
+                Assertions::assertEquals((bool)$value, $json[$key]);
             } else {
                 Assertions::assertEquals($value, $json[$key]);
             }
@@ -951,6 +993,53 @@ class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, Se
         $responseBody = $this->getClient()->lastResponseBody;
 
         var_dump($responseBody);
+    }
+
+    /**
+     * :direction can be "not be" or "be"
+     *
+     * @Then /^the "([^"]*)" field "([^"]*)" should ([^"]*) "([^"]*)"$/
+     *
+     * @param $typeOfValue
+     * @param $field
+     * @param $direction
+     * @param $shouldBe
+     */
+    public function theBooleanFieldFieldShouldBeValue($typeOfValue, $field, $direction, $shouldBe)
+    {
+        $direction = ($direction === 'be') ? 'assertEquals' : 'assertNotEquals';
+
+        $body = json_decode($this->getClient()->lastResponseBody, true);
+
+        $fields = explode('.', $field);
+
+        foreach ($fields as $field) {
+            $body = $body[$field];
+        }
+
+        $shouldBe = $this->convertValueToAlias($shouldBe);
+
+        switch ($typeOfValue) {
+            case 'boolean':
+            case 'bool':
+                $shouldBe = (strtolower($shouldBe) === 'false') ? false : $shouldBe;
+                $shouldBe = (boolean)$shouldBe;
+                break;
+            case 'string':
+                $shouldBe = (string)$shouldBe;
+                break;
+            case 'int':
+            case 'integer':
+                $shouldBe = (int)$shouldBe;
+                break;
+            case 'nullable':
+                $shouldBe = null;
+                break;
+            default:
+                $shouldBe = (string)$shouldBe;
+        }
+
+        Assertions::$direction($shouldBe, $body);
     }
 
     /**

@@ -99,6 +99,21 @@ Things to note with `EntityOptions`
 - aliases are used to create an alias for a configured entity
 - defaultProperties are also used as default parameters when sending api requests
 
+## Using aliases in TableNodes or PyStringNode
+```php
+    Given an existing "TYPE" created with static method "create" with alias "TYPE1"
+    When I add a new "TYPE" with:
+    """
+      {
+        "clinicId": "%Alias:FieldName%"
+      }
+    """
+```
+If Alias does exist, %Alias:FieldName% is replaced with the FieldName of the Alias entity
+
+You can also reference only the alias, if so, it will use the primary key of the entity.
+
+
 ## License
 Copyright (c) 2016 Interactive Solutions Bodama AB
 
