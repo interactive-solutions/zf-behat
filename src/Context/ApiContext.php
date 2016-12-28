@@ -83,6 +83,20 @@ class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, Se
      */
     private function convertValueToAlias($value)
     {
+        if (is_array($value)) {
+
+            array_walk_recursive($value, function(&$value) {
+                $value = $this->replaceValueWithAlias($value);
+            });
+
+            return $value;
+        }
+
+        return $this->replaceValueWithAlias($value);
+    }
+
+    private function replaceValueWithAlias($value)
+    {
         if (!(strpos($value, '%') === 0) && !(strpos(strrev($value), '%') === 0)) {
             return $value;
         }
