@@ -95,6 +95,10 @@ class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, Se
         return $this->replaceValueWithAlias($value);
     }
 
+    /**
+     * @param $value
+     * @return string|mixed
+     */
     private function replaceValueWithAlias($value)
     {
         if (!(strpos($value, '%') === 0) && !(strpos(strrev($value), '%') === 0)) {
@@ -731,9 +735,10 @@ class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, Se
      */
     private function createUri($type, $typeId = null, $subType = null, $subTypeId = null)
     {
-        $uri = '/';
-
-        $route = $this->entityFixtureContext->getEntityRoute($type);
+        $uri       = '/';
+        $route     = $this->entityFixtureContext->getEntityRoute($type);
+        $typeId    = $this->replaceValueWithAlias($typeId);
+        $subTypeId = $this->replaceValueWithAlias($subTypeId);
 
         if (!$route) {
             $route = PluralisationUtil::pluralize($type);
