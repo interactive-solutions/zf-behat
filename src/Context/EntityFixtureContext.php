@@ -75,6 +75,15 @@ class EntityFixtureContext implements SnippetAcceptingContext, ServiceManagerAwa
     }
 
     /**
+     * @param $entity
+     * @param $alias
+     */
+    public function addEntityToAlias($entity, $alias)
+    {
+        $this->aliases[$alias] = $entity;
+    }
+
+    /**
      * Reset the alias list
      *
      * @BeforeScenario
@@ -265,7 +274,7 @@ class EntityFixtureContext implements SnippetAcceptingContext, ServiceManagerAwa
     {
         $entity = $this->anExistingTypeCreatedWithStaticMethod($type, $staticMethodName);
 
-        $this->aliases[$alias] = $entity;
+        $this->addEntityToAlias($entity, $alias);
     }
 
     /**
@@ -318,7 +327,7 @@ class EntityFixtureContext implements SnippetAcceptingContext, ServiceManagerAwa
     {
         $entity = $this->anExisting($type);
 
-        $this->aliases[$alias] = $entity;
+        $this->addEntityToAlias($entity, $alias);
     }
 
     /**
@@ -335,7 +344,7 @@ class EntityFixtureContext implements SnippetAcceptingContext, ServiceManagerAwa
     {
         $entity = $this->anExistingWithValues($type, $values);
 
-        $this->aliases[$alias] = $entity;
+        $this->addEntityToAlias($entity, $alias);
     }
 
     /**
