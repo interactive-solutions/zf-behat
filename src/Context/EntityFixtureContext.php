@@ -80,7 +80,7 @@ class EntityFixtureContext implements SnippetAcceptingContext, ServiceManagerAwa
      */
     public function addEntityToAlias($entity, $alias)
     {
-        $this->addEntityToAlias($entity, $alias);
+        $this->aliases[$alias] = $entity;
     }
 
     /**
