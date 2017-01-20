@@ -143,7 +143,9 @@ class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, Se
      */
     public function iRetrieveAllWith($type, $queryString)
     {
-        $this->getClient()->get($this->createUri($type), parse_query($queryString, false));
+        $convertedQuery = $this->convertValueToAlias(parse_query($queryString,false));
+
+        $this->getClient()->get($this->createUri($type), $convertedQuery);
     }
 
     /**
@@ -172,7 +174,9 @@ class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, Se
      */
     public function iRetrieveAllFromWithIdAndQueryString($type, $parentType, $parentId, $query)
     {
-        $this->getClient()->get($this->createUri($parentType, $parentId, $type), parse_query($query, false));
+        $convertedQuery = $this->convertValueToAlias(parse_query($query,false));
+
+        $this->getClient()->get($this->createUri($parentType, $parentId, $type), $convertedQuery);
     }
 
     /**
@@ -235,7 +239,9 @@ class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, Se
      */
     public function iRetrieveWithIdAndTheQueryString($type, $id, $query)
     {
-        $this->getClient()->get($this->createUri($type, $id), parse_query($query, false));
+        $convertedQuery = $this->convertValueToAlias(parse_query($query, false));
+
+        $this->getClient()->get($this->createUri($type, $id), $convertedQuery);
     }
 
     /**
