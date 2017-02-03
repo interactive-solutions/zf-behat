@@ -9,8 +9,10 @@ declare(strict_types = 1);
 namespace InteractiveSolutions\ZfBehat\Context;
 
 use Behat\Behat\Context\SnippetAcceptingContext;
+use Behat\Behat\Hook\Scope\BeforeScenarioScope;
 use Bernard\Envelope;
 use Bernard\QueueFactory;
+use Closure;
 use InteractiveSolutions\Bernard\BernardOptions;
 use InteractiveSolutions\ZfBehat\Assertions;
 use Zend\ServiceManager\ServiceManager;
@@ -22,6 +24,25 @@ class BernardContext implements SnippetAcceptingContext, ServiceManagerAwareInte
      * @var ServiceManager
      */
     private $serviceManager;
+
+    /**
+     * @var ApiContext
+     */
+    private $apiContext;
+
+    /**
+     * Inject the entity manager
+     *
+     * @BeforeScenario
+     *
+     * @param BeforeScenarioScope $scope
+     *
+     * @return void
+     */
+    public function bootstrap(BeforeScenarioScope $scope)
+    {
+        $this->apiContext = $scope->getEnvironment()->getContext(ApiContext::class);
+    }
 
     /**
      * Set service manager
@@ -97,5 +118,67 @@ class BernardContext implements SnippetAcceptingContext, ServiceManagerAwareInte
         Assertions::fail(sprintf('No task with name %s was found in the queue: %s', $taskName, $queueName));
 
         return false;
+    }
+
+    /**
+     * @Then the task in queue :queueName with index :index should have the field :field with value :value
+     *
+     * @param $queueName
+     * @param $index
+     * @param $fields
+     * @param $value
+     * @return void
+     * @throws \RuntimeException
+     * @throws \PHPUnit_Framework_AssertionFailedError
+     */
+    public function theTaskInQueueWithIndexShouldHaveTheFieldWithValue($queueName, $index, $fields, $value)
+    {
+        $queue = $this->createQueue($queueName);
+
+        /** @var Envelope $envelope */
+        foreach ($queue->peek() as $idx => $envelope) {
+            if ($idx === (int) $index) {
+
+                $message = $envelope->getMessage();
+                $fields  = explode('.', $fields);
+
+                $actualValue   = $this->getFieldOfObject($message, reset($fields));
+                $expectedValue = $this->apiContext->convertValueToAlias($value);
+
+                // Remove the first key, because we don't need it again
+                array_shift($fields);
+
+                // Move downwards the array if multiple fields exists
+                foreach ($fields as $field) {
+                    Assertions::assertArrayHasKey($field, $actualValue);
+                    $actualValue = $actualValue[$field];
+                }
+
+                Assertions::assertEquals($expectedValue, $actualValue);
+
+                return;
+            }
+        }
+
+        Assertions::fail(sprintf('Could not find task with index: %s in queue: %s', $index, $queueName));
+    }
+
+    /**
+     * Binds an anonymous function to an object, allowing us to access
+     * instance variables directly
+     *
+     * @param $object
+     * @param $field
+     * @return mixed
+     */
+    private function getFieldOfObject($object, $field)
+    {
+        $getValue = function ($object, $field) {
+            return $object->{$field};
+        };
+
+        $getValue = Closure::bind($getValue, null, $object);
+
+        return $getValue($object, $field);
     }
 }
