@@ -81,7 +81,7 @@ class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, Se
      * @throws RuntimeException
      * @return string
      */
-    private function convertValueToAlias($value)
+    public function convertValueToAlias($value)
     {
         if (is_array($value)) {
 
