@@ -461,10 +461,29 @@ class EntityFixtureContext implements SnippetAcceptingContext, ServiceManagerAwa
      *
      * @param $type
      * @param $alias
+     *
+     * @return object
      */
     public function anExistingOnAlias($type, $alias)
     {
-        $this->anExistingOnAliasWithValues($type, $alias, new TableNode([]));
+        return $this->anExistingOnAliasWithValues($type, $alias, new TableNode([]));
+    }
+
+    /**
+     * @Given an existing :type on alias :alias as :childAlias
+     */
+    public function anExistingOnAliasAs($type, $alias, $childAlias)
+    {
+        $this->anExistingOnAliasAsWithValues($type, $alias, $childAlias, new TableNode([]));
+    }
+
+    /**
+     * @Given an existing :type on alias :alias as :childAlias with values:
+     */
+    public function anExistingOnAliasAsWithValues($type, $alias, $childAlias, TableNode $values)
+    {
+        $childEntity = $this->anExistingOnAliasWithValues($type, $alias, $values);
+        $this->addEntityToAlias($childEntity, $childAlias);
     }
 
     /**
@@ -475,6 +494,8 @@ class EntityFixtureContext implements SnippetAcceptingContext, ServiceManagerAwa
      * @param string $type
      * @param $alias
      * @param TableNode $values
+     *
+     * @return object
      */
     public function anExistingOnAliasWithValues($type, $alias, TableNode $values)
     {
@@ -503,6 +524,8 @@ class EntityFixtureContext implements SnippetAcceptingContext, ServiceManagerAwa
 
         $this->entityManager->persist($targetEntity);
         $this->entityManager->flush();
+
+        return $targetEntity;
     }
 
     /**
