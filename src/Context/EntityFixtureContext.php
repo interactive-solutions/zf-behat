@@ -462,11 +462,11 @@ class EntityFixtureContext implements SnippetAcceptingContext, ServiceManagerAwa
      * @param $type
      * @param $alias
      *
-     * @return object
+     * @return void
      */
     public function anExistingOnAlias($type, $alias)
     {
-        return $this->anExistingOnAliasWithValues($type, $alias, new TableNode([]));
+        $this->anExistingOnAliasWithValues($type, $alias, new TableNode([]));
     }
 
     /**
