@@ -121,7 +121,7 @@ trait EntityHydrationTrait
         }
 
         // from now on, we assume it's a string
-        switch ($newValue) {
+        switch (mb_strtolower($newValue)) {
             case '1':
             case 't':
             case 'true':
