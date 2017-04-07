@@ -23,7 +23,7 @@ use Zend\ServiceManager\ServiceManagerAwareInterface;
 
 class EntityFixtureContext implements SnippetAcceptingContext, ServiceManagerAwareInterface
 {
-    use EntityHydratorTrait;
+    use EntityHydrationTrait;
 
     /**
      * @var array
@@ -297,14 +297,12 @@ class EntityFixtureContext implements SnippetAcceptingContext, ServiceManagerAwa
 
         $properties = $this->getDefaultEntityProperties($type);
         $metadata   = $this->entityManager->getClassMetadata($entityClass);
-        $hydrator   = $this->createEntityHydrator($metadata);
 
         foreach ($values->getRows() as list ($key, $value)) {
             $properties[$key] = $value;
         }
 
-        $entity = $hydrator->hydrate($properties, new $entityClass());
-
+        $entity = $this->hydrateEntity($metadata, new $entityClass(), $properties);
         $this->ensureEntityTimestamps($entity);
 
         $this->entityManager->persist($entity);
@@ -426,24 +424,20 @@ class EntityFixtureContext implements SnippetAcceptingContext, ServiceManagerAwa
      */
     public function anExistingWithParentAndValues($type, $parentType, $parentId, TableNode $values)
     {
-        $options     = $this->getEntityOptions($type);
         $parentClass = $this->getEntityClass($parentType);
         $targetClass = $this->getEntityClass($type);
 
         $properties = $this->getDefaultEntityProperties($type);
         $metadata   = $this->entityManager->getClassMetadata($targetClass);
 
-        $hydrator = isset($options['hydrator']) ? new $options['hydrator'] : null;
-        $hydrator = $this->createEntityHydrator($metadata, $hydrator);
-
         foreach ($values->getRows() as list ($key, $value)) {
             $properties[$key] = $value;
         }
 
-        $targetEntity = $hydrator->hydrate($properties, new $targetClass());
-        $parentEntity = $this->entityManager->find($parentClass, $parentId);
-
+        $targetEntity = $this->hydrateEntity($metadata, new $targetClass(), $properties);
         $this->ensureEntityTimestamps($targetEntity);
+
+        $parentEntity = $this->entityManager->find($parentClass, $parentId);
 
         $parentMetadata = $this->entityManager->getClassMetadata($parentClass);
         $targetMetadata = $this->entityManager->getClassMetadata($targetClass);
@@ -499,20 +493,16 @@ class EntityFixtureContext implements SnippetAcceptingContext, ServiceManagerAwa
      */
     public function anExistingOnAliasWithValues($type, $alias, TableNode $values)
     {
-        $options     = $this->getEntityOptions($type);
         $targetClass = $this->getEntityClass($type);
 
         $properties = $this->getDefaultEntityProperties($type);
         $metadata   = $this->entityManager->getClassMetadata($targetClass);
 
-        $hydrator = isset($options['hydrator']) ? new $options['hydrator'] : null;
-        $hydrator = $this->createEntityHydrator($metadata, $hydrator);
-
         foreach ($values->getRows() as list ($key, $value)) {
             $properties[$key] = $value;
         }
 
-        $targetEntity = $hydrator->hydrate($properties, new $targetClass());
+        $targetEntity = $this->hydrateEntity($metadata, new $targetClass(), $properties);
         $this->ensureEntityTimestamps($targetEntity);
 
         $parent = $this->getEntityFromAlias($alias);

@@ -18,7 +18,7 @@ use ZfrOAuth2\Server\Entity\TokenOwnerInterface;
 
 class UserFixtureContext implements SnippetAcceptingContext, ServiceManagerAwareInterface
 {
-    use EntityHydratorTrait;
+    use EntityHydrationTrait;
 
     /**
      * @var ObjectManager
@@ -71,9 +71,9 @@ class UserFixtureContext implements SnippetAcceptingContext, ServiceManagerAware
      */
     public function generateDefaultUser($role = 'user', $stepIdentifierValue = null)
     {
-        $userEntityClass   = $this->options->getUserEntityClass();
-        $userProperties    = $this->options->getDefaultUserProperties();
-        $stepIdentifier    = $this->options->getUserStepIdentifier();
+        $userEntityClass = $this->options->getUserEntityClass();
+        $userProperties  = $this->options->getDefaultUserProperties();
+        $stepIdentifier  = $this->options->getUserStepIdentifier();
 
         // If we have a password, bcrypt it
         if (isset($userProperties['password'])) {
@@ -89,14 +89,12 @@ class UserFixtureContext implements SnippetAcceptingContext, ServiceManagerAware
         /* @var TokenOwnerInterface $user */
         $user = $this->getRepository()->findOneBy([$stepIdentifier => $userProperties[$stepIdentifier]]);
 
-        if (! $user) {
+        if (!$user) {
             $user = new $userEntityClass();
         }
 
         $metadata = $this->objectManager->getClassMetadata($userEntityClass);
-        $hydrator = $this->createEntityHydrator($metadata);
-
-        $hydrator->hydrate($userProperties, $user);
+        $user     = $this->hydrateEntity($metadata, $user, $userProperties);
 
         return $user;
     }
