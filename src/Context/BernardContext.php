@@ -4,22 +4,31 @@
  *
  * @copyright Interactive Solutions
  */
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace InteractiveSolutions\ZfBehat\Context;
 
 use Behat\Behat\Context\SnippetAcceptingContext;
 use Behat\Behat\Hook\Scope\BeforeScenarioScope;
+use Bernard\BernardEvents;
+use Bernard\Consumer;
 use Bernard\Envelope;
+use Bernard\Event\EnvelopeEvent;
+use Bernard\Event\RejectEnvelopeEvent;
 use Bernard\QueueFactory;
 use Closure;
 use InteractiveSolutions\Bernard\BernardOptions;
+use InteractiveSolutions\Bernard\EventDispatcherInterface;
+use InteractiveSolutions\Bernard\Producer;
 use InteractiveSolutions\ZfBehat\Assertions;
+use Zend\ServiceManager\ServiceLocatorAwareTrait;
 use Zend\ServiceManager\ServiceManager;
 use Zend\ServiceManager\ServiceManagerAwareInterface;
 
 class BernardContext implements SnippetAcceptingContext, ServiceManagerAwareInterface
 {
+    use ServiceLocatorAwareTrait;
+
     /**
      * @var ServiceManager
      */
@@ -29,6 +38,11 @@ class BernardContext implements SnippetAcceptingContext, ServiceManagerAwareInte
      * @var ApiContext
      */
     private $apiContext;
+
+    /**
+     * @var EnvelopeEvent|RejectEnvelopeEvent
+     */
+    private $eventOfLastExecutedTask;
 
     /**
      * Inject the entity manager
@@ -45,6 +59,14 @@ class BernardContext implements SnippetAcceptingContext, ServiceManagerAwareInte
     }
 
     /**
+     * @BeforeScenario
+     */
+    public function clearDataOfLastExecutedTask()
+    {
+        $this->eventOfLastExecutedTask = null;
+    }
+
+    /**
      * Set service manager
      *
      * @param ServiceManager $serviceManager
@@ -55,35 +77,27 @@ class BernardContext implements SnippetAcceptingContext, ServiceManagerAwareInte
     }
 
     /**
-     * @return QueueFactory
+     * @return Consumer
      */
-    private function getQueueFactory()
+    public function getConsumer()
     {
-        /* @var $options BernardOptions */
-        $options = $this->serviceManager->get(BernardOptions::class);
-
-        /* @var QueueFactory $queueFactory */
-        $queueFactory = $this->serviceManager->get($options->getQueueInstanceKey());
-
-        return $queueFactory;
+        return $this->serviceManager->get(Consumer::class);
     }
 
     /**
-     * @param $queueName
-     *
-     * @return \Bernard\Queue
+     * @return Producer
      */
-    private function createQueue($queueName)
+    public function getProducer()
     {
-        return $this->getQueueFactory()->create($queueName);
+        return $this->serviceManager->get(Producer::class);
     }
 
     /**
-     * @param $queueName
+     * @return EventDispatcherInterface
      */
-    private function clearQueue($queueName)
+    public function getEventDispatcher()
     {
-        return $this->getQueueFactory()->remove($queueName);
+        return $this->serviceManager->get(EventDispatcherInterface::class);
     }
 
     /**
@@ -111,6 +125,7 @@ class BernardContext implements SnippetAcceptingContext, ServiceManagerAwareInte
         foreach ($queue->peek() as $envelope) {
             if ($taskName === $envelope->getName()) {
                 Assertions::assertEquals($taskName, $envelope->getName());
+
                 return true;
             }
         }
@@ -164,6 +179,64 @@ class BernardContext implements SnippetAcceptingContext, ServiceManagerAwareInte
     }
 
     /**
+     * @When the first task from queue :queueName is executed
+     *
+     * @param $queueName
+     */
+    public function theFirstTaskFromQueueIsExecuted($queueName)
+    {
+        $eventDispatcher = $this->getEventDispatcher();
+        $queue           = $this->createQueue($queueName);
+        $consumer        = $this->getConsumer();
+
+        $eventDispatcher->addListener(BernardEvents::REJECT, [$this, 'onTaskExecuted']);
+        $eventDispatcher->addListener(BernardEvents::ACKNOWLEDGE, [$this, 'onTaskExecuted']);
+
+        $consumer->tick($queue);
+
+        $eventDispatcher->removeListener(BernardEvents::REJECT, [$this, 'onTaskExecuted']);
+        $eventDispatcher->removeListener(BernardEvents::ACKNOWLEDGE, [$this, 'onTaskExecuted']);
+    }
+
+    /**
+     * @Then the last executed task should be acknowledged
+     */
+    public function theLastExecutedTaskShouldBeAcknowledged()
+    {
+        Assertions::assertInstanceOf(EnvelopeEvent::class, $this->eventOfLastExecutedTask);
+    }
+
+    /**
+     * @Then the last executed task should be rejected
+     */
+    public function theLastExecutedTaskShouldBeRejected()
+    {
+        Assertions::assertInstanceOf(RejectEnvelopeEvent::class, $this->eventOfLastExecutedTask);
+    }
+
+    /**
+     * @Then dump the exception of the last executed task
+     */
+    public function dumpExceptionOfLastExecutedTask()
+    {
+        if ($this->eventOfLastExecutedTask && $this->eventOfLastExecutedTask instanceof RejectEnvelopeEvent) {
+            var_dump($this->eventOfLastExecutedTask->getException());
+        }
+
+        var_dump(null);
+    }
+
+    /**
+     * Called when bernard task is completed
+     *
+     * @param EnvelopeEvent|RejectEnvelopeEvent $event
+     */
+    public function onTaskExecuted($event)
+    {
+        $this->eventOfLastExecutedTask = $event;
+    }
+
+    /**
      * Binds an anonymous function to an object, allowing us to access
      * instance variables directly
      *
@@ -180,5 +253,37 @@ class BernardContext implements SnippetAcceptingContext, ServiceManagerAwareInte
         $getValue = Closure::bind($getValue, null, $object);
 
         return $getValue($object, $field);
+    }
+
+    /**
+     * @return QueueFactory
+     */
+    private function getQueueFactory()
+    {
+        /* @var $options BernardOptions */
+        $options = $this->serviceManager->get(BernardOptions::class);
+
+        /* @var QueueFactory $queueFactory */
+        $queueFactory = $this->serviceManager->get($options->getQueueInstanceKey());
+
+        return $queueFactory;
+    }
+
+    /**
+     * @param $queueName
+     *
+     * @return \Bernard\Queue
+     */
+    private function createQueue($queueName)
+    {
+        return $this->getQueueFactory()->create($queueName);
+    }
+
+    /**
+     * @param $queueName
+     */
+    private function clearQueue($queueName)
+    {
+        return $this->getQueueFactory()->remove($queueName);
     }
 }
