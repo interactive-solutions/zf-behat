@@ -565,7 +565,46 @@ class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, Se
      */
     public function iSendAActionWithMethod($action, $method)
     {
-        $this->sendRpcAction('/' . $action, $method);
+        $this->iSendAActionWithMethodAndValues($action, $method, new TableNode([]));
+    }
+
+    /**
+     * @When I send a :action action with method :method and values:
+     *
+     * @param $action
+     * @param $method
+     * @param TableNode $values
+     */
+    public function iSendAActionWithMethodAndValues($action, $method, TableNode $values)
+    {
+        $body = [];
+
+        foreach ($values->getRows() as list ($key, $values)) {
+            $body[$key] = $this->convertValueToAlias($values);
+        }
+
+        $this->sendRpcAction(sprintf('/%s', $action), $method, $body);
+    }
+
+    /**
+     * @When I send a :action action with method :method and body:
+     *
+     * @param $action
+     * @param $method
+     * @param PyStringNode $string
+     */
+    public function iSendAActionWithMethodAndBody($action, $method, PyStringNode $string)
+    {
+        // Make sure the developer provided valid json
+        Assertions::assertJson($string->getRaw());
+
+        $data = json_decode($string, true);
+
+        foreach ($data as $key => $value) {
+            $body[$key] = $this->convertValueToAlias($value);
+        }
+
+        $this->sendRpcAction(sprintf('/%s', $action), $method, $body);
     }
 
     /**
