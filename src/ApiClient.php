@@ -109,8 +109,8 @@ class ApiClient
      * Send a post request
      *
      * @param string $uri
-     * @param array  $body
-     * @param array  $params
+     * @param array $body
+     * @param array $params
      *
      * @return void
      */
@@ -135,8 +135,8 @@ class ApiClient
 
     /**
      * @param string $uri
-     * @param array  $body
-     * @param array  $params
+     * @param array $body
+     * @param array $params
      *
      * @return void
      */
@@ -147,9 +147,9 @@ class ApiClient
         try {
 
             $this->lastResponse = $this->client->post($uri, [
-                'query'       => $params,
-                'multipart'   => $body,
-                'headers'     => $this->headers,
+                'query'     => $params,
+                'multipart' => $body,
+                'headers'   => $this->headers,
             ]);
 
         } catch (RequestException $e) {
@@ -163,7 +163,7 @@ class ApiClient
      * Retrieve a uri
      *
      * @param string $uri
-     * @param array  $params
+     * @param array $params
      *
      * @return void
      */
@@ -187,9 +187,10 @@ class ApiClient
 
     /**
      * @param string $uri
-     * @param array  $body
+     * @param array $body
+     * @param array $params
      */
-    public function put($uri, array $body)
+    public function put($uri, array $body, array $params = [])
     {
         $this->lastRequestBody = $body;
 
@@ -198,6 +199,7 @@ class ApiClient
             $this->lastResponse = $this->client->put($uri, [
                 'json'    => $body,
                 'headers' => $this->headers,
+                'query'   => $params,
             ]);
 
         } catch (RequestException $e) {
@@ -207,7 +209,7 @@ class ApiClient
         }
     }
 
-    public function patch($uri, array $body)
+    public function patch($uri, array $body, array $params = [])
     {
         $this->lastRequestBody = $body;
 
@@ -216,6 +218,7 @@ class ApiClient
             $this->lastResponse = $this->client->patch($uri, [
                 'json'    => $body,
                 'headers' => $this->headers,
+                'query'   => $params,
             ]);
 
         } catch (RequestException $e) {
@@ -227,8 +230,9 @@ class ApiClient
 
     /**
      * @param string $uri
+     * @param array $params
      */
-    public function delete($uri)
+    public function delete($uri, array $params = [])
     {
         $this->lastRequestBody = null;
 
@@ -236,6 +240,7 @@ class ApiClient
 
             $this->lastResponse = $this->client->delete($uri, [
                 'headers' => $this->headers,
+                'query'   => $params,
             ]);
 
         } catch (RequestException $e) {

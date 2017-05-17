@@ -142,7 +142,10 @@ class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, Se
      */
     public function iSendATo($method, $url)
     {
-        call_user_func($this->getApiMethodToCall($method), $this->convertValueToAlias($url));
+        $query = $this->parseQuery($url);
+        $url   = explode('?', $url)[0];
+
+        call_user_func($this->getApiMethodToCall($method), $this->convertValueToAlias($url), $query);
     }
 
     /**
@@ -166,7 +169,10 @@ class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, Se
             $body[$key] = $this->convertValueToAlias($value);
         }
 
-        call_user_func($this->getApiMethodToCall($method), $this->convertValueToAlias($url), $body);
+        $query = $this->parseQuery($url);
+        $url   = explode('?', $url)[0];
+
+        call_user_func($this->getApiMethodToCall($method), $this->convertValueToAlias($url), $body, $query);
     }
 
     /**
@@ -186,7 +192,10 @@ class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, Se
             $body[$key] = $this->convertValueToAlias($value);
         }
 
-        call_user_func($this->getApiMethodToCall($method), $this->convertValueToAlias($url), $body);
+        $query = $this->parseQuery($url);
+        $url   = explode('?', $url)[0];
+
+        call_user_func($this->getApiMethodToCall($method), $this->convertValueToAlias($url), $body, $query);
     }
 
     /**
@@ -225,6 +234,25 @@ class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, Se
                 throw new RuntimeException('Unsuppored http verb provided');
         }
     }
+
+    /**
+     * Parse query from provided url
+     *
+     * @param string $url
+     * @return array
+     */
+    private function parseQuery(string $url)
+    {
+        if (strpos($url, '?') === false) {
+            return [];
+        }
+
+        $query = explode('?', $url)[1];
+
+        return parse_query($query);
+    }
+
+    // todo: Basically everything from below here should be deprecated
 
     /**
      * @When I retrieve all :type
