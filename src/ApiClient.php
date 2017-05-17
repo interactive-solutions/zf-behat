@@ -81,6 +81,12 @@ class ApiClient
         $this->headers = [];
     }
 
+    /**
+     * Send a post request using form-data
+     *
+     * @param $uri
+     * @param $formData
+     */
     public function postWithFormData($uri, $formData)
     {
         $this->lastRequestBody = null;

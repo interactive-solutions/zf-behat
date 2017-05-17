@@ -85,7 +85,7 @@ class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, Se
     {
         if (is_array($value)) {
 
-            array_walk_recursive($value, function(&$value) {
+            array_walk_recursive($value, function (&$value) {
                 $value = $this->replaceValueWithAlias($value);
             });
 
@@ -101,28 +101,129 @@ class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, Se
      */
     private function replaceValueWithAlias($value)
     {
-        if (!(strpos($value, '%') === 0) && !(strpos(strrev($value), '%') === 0)) {
+        if (!is_string($value)) {
             return $value;
         }
 
-        // Remove the last and first characters
-        $value = substr($value, 1, -1);
+        $parts = explode('%', $value);
+        $result = [];
 
-        // Covers the case when a field is not specified
-        $alias = $value;
-        $field = null;
+        foreach ($parts as $index => $alias) {
+            // Due to the way explode works, every second (odd) item in the array should be replaced
+            if ($index % 2 === 1 && $index !== count($parts) - 1) {
+                $field = null;
 
-        if (strpos($value, ':') !== 0) {
-            list($alias, $field) = explode(':', $value);
+                if (strpos($alias, ':') !== false) {
+                    list($alias, $field) = explode(':', $alias);
+                }
+
+                $entity = $this->entityFixtureContext->getEntityFromAlias($alias);
+
+                if (!$field) {
+                    $field = $this->entityManager->getClassMetadata(get_class($entity))->getSingleIdentifierColumnName();
+                }
+
+                $result[] = $this->getFieldOfObject($entity, $field);
+            } else {
+                $result[] = $alias;
+            }
         }
 
-        $entity = $this->entityFixtureContext->getEntityFromAlias($alias);
+        return implode($result);
+    }
 
-        if (!$field) {
-            $field = $this->entityManager->getClassMetadata(get_class($entity))->getSingleIdentifierColumnName();
+    /**
+     * @When I send a :method to :url
+     *
+     * @param $method
+     * @param $url
+     *
+     * @throws RuntimeException
+     */
+    public function iSendATo($method, $url)
+    {
+        call_user_func($this->getApiMethodToCall($method), $this->convertValueToAlias($url));
+    }
+
+    /**
+     * @When I send a :method to :url with json:
+     *
+     * @param $method
+     * @param $url
+     * @param PyStringNode $string
+     *
+     * @throws RuntimeException
+     */
+    public function iSendAToWithJson($method, $url, PyStringNode $string)
+    {
+        // Make sure the developer provided valid json
+        Assertions::assertJson($string->getRaw());
+
+        $body = [];
+        $data = json_decode($string, true);
+
+        foreach ($data as $key => $value) {
+            $body[$key] = $this->convertValueToAlias($value);
         }
 
-        return $this->getFieldOfObject($entity, $field);
+        call_user_func($this->getApiMethodToCall($method), $this->convertValueToAlias($url), $body);
+    }
+
+    /**
+     * @When I send a :method to :url with json values:
+     *
+     * @param $method
+     * @param $url
+     * @param TableNode $values
+     *
+     * @throws RuntimeException
+     */
+    public function iSendAToWithJsonValues($method, $url, TableNode $values)
+    {
+        $body = [];
+
+        foreach ($values->getRows() as list ($key, $value)) {
+            $body[$key] = $this->convertValueToAlias($value);
+        }
+
+        call_user_func($this->getApiMethodToCall($method), $this->convertValueToAlias($url), $body);
+    }
+
+    /**
+     * @When I send a POST to :url with form-data values:
+     *
+     * @param $url
+     * @param TableNode $values
+     *
+     * @throws RuntimeException
+     */
+    public function iSendAToWithFormDataValues($url, TableNode $values)
+    {
+        $body = [];
+
+        foreach ($values->getRows() as list ($key, $value)) {
+            $body[$key] = $this->convertValueToAlias($value);
+        }
+
+        $this->getClient()->postWithFormData($this->convertValueToAlias($url), $body);
+    }
+
+    /**
+     * @param string $method
+     * @return callable
+     */
+    private function getApiMethodToCall(string $method): callable
+    {
+        switch (strtoupper($method)) {
+            case 'GET':
+            case 'POST':
+            case 'PUT':
+            case 'DELETE':
+            case 'PATCH':
+                return [$this->getClient(), strtolower($method)];
+            default:
+                throw new RuntimeException('Unsuppored http verb provided');
+        }
     }
 
     /**
@@ -143,7 +244,7 @@ class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, Se
      */
     public function iRetrieveAllWith($type, $queryString)
     {
-        $convertedQuery = $this->convertValueToAlias(parse_query($queryString,false));
+        $convertedQuery = $this->convertValueToAlias(parse_query($queryString, false));
 
         $this->getClient()->get($this->createUri($type), $convertedQuery);
     }
@@ -174,7 +275,7 @@ class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, Se
      */
     public function iRetrieveAllFromWithIdAndQueryString($type, $parentType, $parentId, $query)
     {
-        $convertedQuery = $this->convertValueToAlias(parse_query($query,false));
+        $convertedQuery = $this->convertValueToAlias(parse_query($query, false));
 
         $this->getClient()->get($this->createUri($parentType, $parentId, $type), $convertedQuery);
     }
@@ -705,8 +806,8 @@ class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, Se
         $type,
         $alias,
         $method,
-        TableNode $values)
-    {
+        TableNode $values
+    ) {
         $parent         = $this->entityFixtureContext->getEntityFromAlias($alias);
         $parentIdColumn = $this->entityFixtureContext->getPrimaryKeyColumnOfEntity($parent);
 
@@ -889,7 +990,7 @@ class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, Se
             Assertions::assertJson($responseBody);
             Assertions::assertEquals(422, $this->getClient()->lastResponse->getStatusCode());
 
-            Assertions::assertCount((int)$count, json_decode($responseBody, true)['errors']);
+            Assertions::assertCount((int) $count, json_decode($responseBody, true)['errors']);
 
         } catch (PHPUnit_Framework_ExpectationFailedException $e) {
 
@@ -979,7 +1080,7 @@ class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, Se
                 Assertions::assertArrayHasKey($key, $json);
 
                 if (is_bool($json[$key])) {
-                    Assertions::assertEquals((bool)$value, $json[$key]);
+                    Assertions::assertEquals((bool) $value, $json[$key]);
                 } else {
                     Assertions::assertEquals($value, $json[$key]);
                 }
@@ -1012,7 +1113,7 @@ class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, Se
             $json = json_decode($responseBody, true);
 
             Assertions::assertArrayHasKey('data', $json);
-            Assertions::assertCount((int)$records, $json['data']);
+            Assertions::assertCount((int) $records, $json['data']);
 
         } catch (PHPUnit_Framework_ExpectationFailedException $e) {
 
@@ -1042,7 +1143,7 @@ class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, Se
             Assertions::assertArrayHasKey($key, $json);
 
             if (is_bool($json[$key])) {
-                Assertions::assertEquals((bool)$value, $json[$key]);
+                Assertions::assertEquals((bool) $value, $json[$key]);
             } else {
                 Assertions::assertEquals($value, $json[$key]);
             }
@@ -1087,20 +1188,20 @@ class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, Se
             case 'boolean':
             case 'bool':
                 $shouldBe = (strtolower($shouldBe) === 'false') ? false : $shouldBe;
-                $shouldBe = (boolean)$shouldBe;
+                $shouldBe = (boolean) $shouldBe;
                 break;
             case 'string':
-                $shouldBe = (string)$shouldBe;
+                $shouldBe = (string) $shouldBe;
                 break;
             case 'int':
             case 'integer':
-                $shouldBe = (int)$shouldBe;
+                $shouldBe = (int) $shouldBe;
                 break;
             case 'nullable':
                 $shouldBe = null;
                 break;
             default:
-                $shouldBe = (string)$shouldBe;
+                $shouldBe = (string) $shouldBe;
         }
 
         Assertions::$direction($shouldBe, $body);
