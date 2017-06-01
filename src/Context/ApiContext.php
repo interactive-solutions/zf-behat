@@ -103,6 +103,8 @@ class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, Se
     {
         if (!(strpos($value, '%') === 0) && !(strpos(strrev($value), '%') === 0)) {
             return $value;
+        } else if ($value === 'null') {
+            return null;
         }
 
         // Remove the last and first characters
