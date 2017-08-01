@@ -46,6 +46,10 @@ trait EntityHydrationTrait
                     $this->setBoolFieldOfObject($entity, $field, $values[$field]);
                     break;
 
+                case Type::INTEGER:
+                    $this->setFieldOfObject($entity, $field, (int) $values[$field]);
+                    break;
+
                 default:
                     $this->setFieldOfObject($entity, $field, $values[$field]);
             }

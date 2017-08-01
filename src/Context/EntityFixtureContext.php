@@ -9,8 +9,6 @@ namespace InteractiveSolutions\ZfBehat\Context;
 use Behat\Behat\Context\SnippetAcceptingContext;
 use Behat\Behat\Hook\Scope\BeforeScenarioScope;
 use Behat\Gherkin\Node\TableNode;
-use DateTime;
-use Doctrine\Common\Persistence\Mapping\ClassMetadata;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
 use Doctrine\ORM\OptimisticLockException;
