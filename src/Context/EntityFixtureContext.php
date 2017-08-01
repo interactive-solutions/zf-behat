@@ -16,6 +16,7 @@ use Doctrine\ORM\Mapping\ClassMetadataInfo;
 use Doctrine\ORM\OptimisticLockException;
 use Doctrine\ORM\ORMException;
 use Doctrine\ORM\TransactionRequiredException;
+use Epulze\Match\Entity\MatchEntity;
 use InteractiveSolutions\ZfBehat\Options\EntityOptions;
 use RuntimeException;
 use Zend\ServiceManager\ServiceManager;
