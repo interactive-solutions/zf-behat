@@ -61,7 +61,7 @@ class ServiceManagerInitializer implements ContextInitializer
             $moduleManager = $this->serviceManager->get('ModuleManager');
             $moduleManager->loadModules();
 
-            $this->clearDoctrineCacheAndGenerateProxies();
+            $this->clearDoctrineCache();
         }
 
         /* @var EntityManager $entityManager */
@@ -82,9 +82,9 @@ class ServiceManagerInitializer implements ContextInitializer
     }
 
     /**
-     * Clear the doctrine cache and generate doctrine proxies
+     * Clear the doctrine cache
      */
-    private function clearDoctrineCacheAndGenerateProxies()
+    private function clearDoctrineCache()
     {
         /* @var EntityManager $entityManager */
         $entityManager = $this->serviceManager->get(EntityManager::class);
@@ -98,12 +98,5 @@ class ServiceManagerInitializer implements ContextInitializer
 
         $cacheDriver = $entityManager->getConfiguration()->getResultCacheImpl();
         $cacheDriver->deleteAll();
-
-        // Generate proxies
-        $destPath  = $entityManager->getConfiguration()->getProxyDir();
-        $metadatas = $entityManager->getMetadataFactory()->getAllMetadata();
-        $entityManager->getProxyFactory()->generateProxyClasses($metadatas, $destPath);
-
-        $this->hasGeneratedProxiesAndClearedDoctrineCache = true;
     }
 }
