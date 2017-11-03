@@ -7,7 +7,7 @@
     "php": ">=5.5.0",
     "guzzlehttp/guzzle": "~6.2.0",
     "doctrine/doctrine-orm-module": "0.9.2",
-    "behat/behat": "3.4.0",
+    "behat/behat": "^3.0.15",
     "zfr/zfr-oauth2-server-module": "~0.6.0",
     "interactive-solutions/zf-stdlib": "~0.0.1"
   },
