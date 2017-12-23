@@ -5,8 +5,7 @@
   "require": {
     "php": ">=5.5.0",
     "guzzlehttp/guzzle": "^6.3.0",
-    "behat/behat": "^3.4.0",
-    "interactive-solutions/zf-stdlib": "~0.0.1"
+    "behat/behat": "^3.4.0"
   },
   "require-dev": {
     "phpunit/phpunit": "~4.8"
