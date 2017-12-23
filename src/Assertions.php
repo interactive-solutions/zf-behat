@@ -7,13 +7,15 @@
 
 namespace InteractiveSolutions\ZfBehat;
 
-use PHPUnit_Framework_Assert;
+use PHPUnit\Framework\Assert;
 
 /**
  * Class Assertions
  *
  * Shorter way to access the phpunit assert framework
+ *
+ * @deprecated Use the version in PHPUNit @see{PHPUnit\Framework\Assert}
  */
-class Assertions extends PHPUnit_Framework_Assert
+class Assertions extends Assert
 {
 }

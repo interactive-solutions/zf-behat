@@ -6,9 +6,8 @@
 
 namespace InteractiveSolutions\ZfBehat\Context;
 
-use Behat\Behat\Context\SnippetAcceptingContext;
+use Behat\Behat\Context\Context;
 use Zend\ServiceManager\ServiceManager;
-use Zend\ServiceManager\ServiceManagerAwareInterface;
 
 /**
  * Class ServiceManagerContext
@@ -17,7 +16,7 @@ use Zend\ServiceManager\ServiceManagerAwareInterface;
  * to the ZF service manager when we are testing
  * the service layer directly. Hopefully Antoine won't keel me.
  */
-class ServiceManagerContext implements SnippetAcceptingContext, ServiceManagerAwareInterface
+class ServiceManagerContext implements Context
 {
     /**
      * @var ServiceManager
@@ -29,7 +28,7 @@ class ServiceManagerContext implements SnippetAcceptingContext, ServiceManagerAw
      *
      * @param ServiceManager $serviceManager
      */
-    public function setServiceManager(ServiceManager $serviceManager)
+    public function setContainer(ServiceManager $serviceManager)
     {
         $this->serviceManager = $serviceManager;
     }

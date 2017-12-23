@@ -6,17 +6,16 @@
 
 namespace InteractiveSolutions\ZfBehat\Context;
 
-use Behat\Behat\Context\SnippetAcceptingContext;
+use Behat\Behat\Context\Context;
 use Behat\Behat\Hook\Scope\BeforeScenarioScope;
 use Doctrine\Common\Persistence\ObjectManager;
 use Doctrine\Common\Persistence\ObjectRepository;
 use InteractiveSolutions\ZfBehat\Options\UserOptions;
 use Zend\Crypt\Password\Bcrypt;
 use Zend\ServiceManager\ServiceManager;
-use Zend\ServiceManager\ServiceManagerAwareInterface;
 use ZfrOAuth2\Server\Entity\TokenOwnerInterface;
 
-class UserFixtureContext implements SnippetAcceptingContext, ServiceManagerAwareInterface
+class UserFixtureContext implements Context
 {
     use EntityHydrationTrait;
 
@@ -49,7 +48,7 @@ class UserFixtureContext implements SnippetAcceptingContext, ServiceManagerAware
         $this->objectManager = $scope->getEnvironment()->getContext(DatabaseContext::class)->getEntityManager();
     }
 
-    public function setServiceManager(ServiceManager $serviceManager)
+    public function setContainer(ServiceManager $serviceManager)
     {
         $this->serviceManager = $serviceManager;
         $this->options        = $serviceManager->get(UserOptions::class);

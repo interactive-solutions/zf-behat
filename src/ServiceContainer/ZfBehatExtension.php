@@ -66,7 +66,7 @@ class ZfBehatExtension implements Extension
         $builder
             ->addDefaultsIfNotSet()
             ->children()
-                ->scalarNode('config_file')->defaultValue('config/application.config.php')->end()
+                ->scalarNode('config_file')->defaultValue('config/container.php')->end()
                 ->scalarNode('api_uri')->defaultValue('http://localhost')->end()
                 ->scalarNode('mailcatcher_url')->defaultValue('http://mailcatcher:1080')->end()
             ->end();

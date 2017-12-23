@@ -6,6 +6,7 @@
 
 namespace InteractiveSolutions\ZfBehat\Context;
 
+use Behat\Behat\Context\Context;
 use Behat\Behat\Context\SnippetAcceptingContext;
 use Behat\Behat\Hook\Scope\BeforeScenarioScope;
 use Behat\Gherkin\Node\TableNode;
@@ -17,9 +18,8 @@ use Doctrine\ORM\TransactionRequiredException;
 use InteractiveSolutions\ZfBehat\Options\EntityOptions;
 use RuntimeException;
 use Zend\ServiceManager\ServiceManager;
-use Zend\ServiceManager\ServiceManagerAwareInterface;
 
-class EntityFixtureContext implements SnippetAcceptingContext, ServiceManagerAwareInterface
+class EntityFixtureContext implements Context
 {
     use EntityHydrationTrait;
 
@@ -61,6 +61,7 @@ class EntityFixtureContext implements SnippetAcceptingContext, ServiceManagerAwa
      * Get an alias
      *
      * @param $alias
+     *
      * @return mixed
      */
     public function getEntityFromAlias(string $alias)
@@ -96,7 +97,7 @@ class EntityFixtureContext implements SnippetAcceptingContext, ServiceManagerAwa
      *
      * @param ServiceManager $serviceManager
      */
-    public function setServiceManager(ServiceManager $serviceManager)
+    public function setContainer(ServiceManager $serviceManager)
     {
         $this->serviceManager = $serviceManager;
         $this->options        = $serviceManager->get(EntityOptions::class);
@@ -227,7 +228,6 @@ class EntityFixtureContext implements SnippetAcceptingContext, ServiceManagerAwa
         return $this->anExistingWithValues($type, new TableNode([]));
     }
 
-
     /**
      * Add a entity of the given type with the default values created with the entities static method
      *
@@ -316,7 +316,8 @@ class EntityFixtureContext implements SnippetAcceptingContext, ServiceManagerAwa
      *
      * @param string $type
      *
-     * @param $alias
+     * @param        $alias
+     *
      * @throws \Doctrine\ORM\ORMException
      */
     public function anExistingAs($type, $alias)
@@ -331,9 +332,10 @@ class EntityFixtureContext implements SnippetAcceptingContext, ServiceManagerAwa
      *
      * @Given an existing :type as :alias with values:
      *
-     * @param string $type
-     * @param $alias
+     * @param string    $type
+     * @param           $alias
      * @param TableNode $values
+     *
      * @throws \Doctrine\ORM\ORMException
      */
     public function anExistingAsWithValues($type, $alias, TableNode $values)
@@ -350,6 +352,7 @@ class EntityFixtureContext implements SnippetAcceptingContext, ServiceManagerAwa
      *
      * @param $type
      * @param $alias
+     *
      * @throws \Doctrine\ORM\ORMException
      */
     public function anExistingIn($type, $alias)
@@ -368,9 +371,10 @@ class EntityFixtureContext implements SnippetAcceptingContext, ServiceManagerAwa
      *
      * @Given an existing :type in :alias with values:
      *
-     * @param $type
-     * @param $alias
+     * @param           $type
+     * @param           $alias
      * @param TableNode $values
+     *
      * @throws \Doctrine\ORM\ORMException
      */
     public function anExistingInWithValues($type, $alias, TableNode $values)
@@ -483,8 +487,8 @@ class EntityFixtureContext implements SnippetAcceptingContext, ServiceManagerAwa
      *
      * @Given an existing :type on alias :alias with values:
      *
-     * @param string $type
-     * @param $alias
+     * @param string    $type
+     * @param           $alias
      * @param TableNode $values
      *
      * @return object

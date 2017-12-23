@@ -8,12 +8,13 @@ declare(strict_types = 1);
 
 namespace InteractiveSolutions\ZfBehat\Context;
 
+use Behat\Behat\Context\Context;
 use Behat\Behat\Context\SnippetAcceptingContext;
 use InteractiveSolutions\ZfBehat\Assertions;
 use InteractiveSolutions\ZfBehat\Context\Aware\MailcatcherClientAwareInterface;
 use InteractiveSolutions\ZfBehat\Context\Aware\MailcatcherClientAwareTrait;
 
-class MailcatcherContext implements MailcatcherClientAwareInterface, SnippetAcceptingContext
+class MailcatcherContext implements MailcatcherClientAwareInterface, Context
 {
     use MailcatcherClientAwareTrait;
 

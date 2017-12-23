@@ -6,7 +6,7 @@
 
 namespace InteractiveSolutions\ZfBehat\Context;
 
-use Behat\Behat\Context\SnippetAcceptingContext;
+use Behat\Behat\Context\Context;
 use Behat\Behat\Hook\Scope\BeforeScenarioScope;
 use DateTime;
 use Doctrine\ORM\EntityManager;
@@ -16,7 +16,7 @@ use InteractiveSolutions\ZfBehat\Context\Aware\ApiClientAwareTrait;
 use ZfrOAuth2\Server\Entity\AccessToken;
 use ZfrOAuth2\Server\Entity\TokenOwnerInterface;
 
-class ZfrOAuthContext implements SnippetAcceptingContext, ApiClientAwareInterface
+class ZfrOAuthContext implements Context, ApiClientAwareInterface
 {
     use ApiClientAwareTrait;
 

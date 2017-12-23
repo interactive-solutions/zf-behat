@@ -1,12 +1,13 @@
 <?php
 /**
- * @author Erik Norgren <erik.norgren@interactivesolutions.se>
+ * @author    Erik Norgren <erik.norgren@interactivesolutions.se>
  * @copyright Interactive Solutions
  */
 
 namespace InteractiveSolutions\ZfBehat\Factory\Options;
 
-use Zend\ServiceManager\AbstractFactoryInterface;
+use Interop\Container\ContainerInterface;
+use Zend\ServiceManager\Factory\AbstractFactoryInterface;
 use Zend\ServiceManager\ServiceLocatorInterface;
 
 class AbstractOptionsFactory implements AbstractFactoryInterface
@@ -21,14 +22,9 @@ class AbstractOptionsFactory implements AbstractFactoryInterface
     ];
 
     /**
-     * Determine if we can create a service with name
-     *
-     * @param ServiceLocatorInterface $serviceLocator
-     * @param $name
-     * @param $requestedName
-     * @return bool
+     * {@inheritdoc}
      */
-    public function canCreateServiceWithName(ServiceLocatorInterface $serviceLocator, $name, $requestedName)
+    public function canCreate(ContainerInterface $container, $requestedName)
     {
         foreach ($this->validPrefixes as $prefix) {
             if (strpos($requestedName, $prefix) !== false) {
@@ -40,16 +36,11 @@ class AbstractOptionsFactory implements AbstractFactoryInterface
     }
 
     /**
-     * Create service with name
-     *
-     * @param ServiceLocatorInterface $serviceLocator
-     * @param $name
-     * @param $requestedName
-     * @return mixed
+     * {@inheritdoc}
      */
-    public function createServiceWithName(ServiceLocatorInterface $serviceLocator, $name, $requestedName)
+    public function __invoke(ContainerInterface $serviceLocator, $requestedName, array $options = null)
     {
-        $config = $serviceLocator->get('Config')[static::APP_CONFIG_KEY]['options'];
+        $config = $serviceLocator->get('config')[static::APP_CONFIG_KEY]['options'];
         $config = isset($config[$requestedName]) ? $config[$requestedName] : [];
 
         return new $requestedName($config);

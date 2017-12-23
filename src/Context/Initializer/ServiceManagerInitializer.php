@@ -42,7 +42,7 @@ class ServiceManagerInitializer implements ContextInitializer
      */
     public function initializeContext(Context $context)
     {
-        if (!$context instanceof ServiceManagerAwareInterface) {
+        if (!method_exists($context, 'setContainer')) {
             return;
         }
 
@@ -52,14 +52,7 @@ class ServiceManagerInitializer implements ContextInitializer
 
         if (!$this->serviceManager) {
             // We _should_ always be in the root of a zf2 project when executing this
-            $config = include $this->file;
-
-            $this->serviceManager = new ServiceManager(new ServiceManagerConfig($config));
-            $this->serviceManager->setService('ApplicationConfig', $config);
-
-            /* @var $moduleManager \Zend\ModuleManager\ModuleManager */
-            $moduleManager = $this->serviceManager->get('ModuleManager');
-            $moduleManager->loadModules();
+            $this->serviceManager = include $this->file;
 
             $this->clearDoctrineCache();
         }
@@ -78,7 +71,7 @@ class ServiceManagerInitializer implements ContextInitializer
             );
         }
 
-        $context->setServiceManager($this->serviceManager);
+        $context->setContainer($this->serviceManager);
     }
 
     /**

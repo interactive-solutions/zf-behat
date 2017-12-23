@@ -8,6 +8,7 @@ declare(strict_types=1);
 
 namespace InteractiveSolutions\ZfBehat\Context;
 
+use Behat\Behat\Context\Context;
 use Behat\Behat\Context\SnippetAcceptingContext;
 use Behat\Behat\Hook\Scope\BeforeScenarioScope;
 use Bernard\BernardEvents;
@@ -21,14 +22,10 @@ use InteractiveSolutions\Bernard\BernardOptions;
 use InteractiveSolutions\Bernard\EventDispatcherInterface;
 use InteractiveSolutions\Bernard\Producer;
 use InteractiveSolutions\ZfBehat\Assertions;
-use Zend\ServiceManager\ServiceLocatorAwareTrait;
 use Zend\ServiceManager\ServiceManager;
-use Zend\ServiceManager\ServiceManagerAwareInterface;
 
-class BernardContext implements SnippetAcceptingContext, ServiceManagerAwareInterface
+class BernardContext implements Context
 {
-    use ServiceLocatorAwareTrait;
-
     /**
      * @var ServiceManager
      */
@@ -71,7 +68,7 @@ class BernardContext implements SnippetAcceptingContext, ServiceManagerAwareInte
      *
      * @param ServiceManager $serviceManager
      */
-    public function setServiceManager(ServiceManager $serviceManager)
+    public function setContainer(ServiceManager $serviceManager)
     {
         $this->serviceManager = $serviceManager;
     }

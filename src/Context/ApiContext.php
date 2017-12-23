@@ -6,7 +6,7 @@
 
 namespace InteractiveSolutions\ZfBehat\Context;
 
-use Behat\Behat\Context\SnippetAcceptingContext;
+use Behat\Behat\Context\Context;
 use Behat\Behat\Hook\Scope\BeforeScenarioScope;
 use Behat\Gherkin\Node\PyStringNode;
 use Behat\Gherkin\Node\TableNode;
@@ -17,13 +17,12 @@ use InteractiveSolutions\ZfBehat\Assertions;
 use InteractiveSolutions\ZfBehat\Context\Aware\ApiClientAwareInterface;
 use InteractiveSolutions\ZfBehat\Context\Aware\ApiClientAwareTrait;
 use InteractiveSolutions\ZfBehat\Util\PluralisationUtil;
-use PHPUnit_Framework_ExpectationFailedException;
+use Psr\Container\ContainerInterface;
 use RuntimeException;
 use Zend\ServiceManager\ServiceManager;
-use Zend\ServiceManager\ServiceManagerAwareInterface;
 use function GuzzleHttp\Psr7\parse_query;
 
-class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, ServiceManagerAwareInterface
+class ApiContext implements Context, ApiClientAwareInterface
 {
     use ApiClientAwareTrait;
 
@@ -68,7 +67,7 @@ class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, Se
      *
      * @param ServiceManager $serviceManager
      */
-    public function setServiceManager(ServiceManager $serviceManager)
+    public function setContainer(ContainerInterface $serviceManager)
     {
         $this->serviceManager = $serviceManager;
     }

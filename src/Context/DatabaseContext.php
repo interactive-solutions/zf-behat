@@ -7,13 +7,13 @@
 
 namespace InteractiveSolutions\ZfBehat\Context;
 
-use Behat\Behat\Context\SnippetAcceptingContext;
+use Behat\Behat\Context\Context;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Tools\SchemaTool;
+use Interop\Container\ContainerInterface;
 use Zend\ServiceManager\ServiceManager;
-use Zend\ServiceManager\ServiceManagerAwareInterface;
 
-class DatabaseContext implements SnippetAcceptingContext, ServiceManagerAwareInterface
+class DatabaseContext implements Context
 {
     /**
      * @var string
@@ -21,26 +21,29 @@ class DatabaseContext implements SnippetAcceptingContext, ServiceManagerAwareInt
     private $objectManagerRef = EntityManager::class;
 
     /**
-     * @var ServiceManager
+     * @var ContainerInterface
      */
-    private $serviceManager;
+    private $container;
 
     /**
-     * Set service manager
+     * DatabaseContext constructor.
      *
-     * @param ServiceManager $serviceManager
+     * @param ContainerInterface $container
      */
-    public function setServiceManager(ServiceManager $serviceManager)
+    public function setContainer(ContainerInterface $container)
     {
-        $this->serviceManager = $serviceManager;
+        $this->container = $container;
     }
 
     /**
+     * @throws \Psr\Container\ContainerExceptionInterface
+     * @throws \Psr\Container\NotFoundExceptionInterface
+     *
      * @return EntityManager
      */
-    public function getEntityManager()
+    public function getEntityManager(): EntityManager
     {
-        return $this->serviceManager->get($this->objectManagerRef);
+        return $this->container->get($this->objectManagerRef);
     }
 
     /**
