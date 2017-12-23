@@ -4,7 +4,7 @@
   "description": "Interactive Solutions extension for Behat",
   "require": {
     "php": ">=5.5.0",
-    "guzzlehttp/guzzle": "~6.2.0",
+    "guzzlehttp/guzzle": "^6.3.0",
     "behat/behat": "^3.4.0",
     "interactive-solutions/zf-stdlib": "~0.0.1"
   },
