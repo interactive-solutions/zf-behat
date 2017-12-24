@@ -49,7 +49,7 @@ class ZfrOAuthContext implements Context, ApiClientAwareInterface
 
     public function generateAccessToken(TokenOwnerInterface $user)
     {
-        $token = AccessToken::createNewAccessToken(3600, $user);
+        $token = AccessToken::createNewAccessToken(10000, $user);
 
         $this->entityManager->persist($token);
         $this->entityManager->flush();
@@ -136,7 +136,6 @@ class ZfrOAuthContext implements Context, ApiClientAwareInterface
     {
         /** @var TokenOwnerInterface $user */
         $user = $this->userFixtureContext->getRepository()->findOneBy(['username' => $username]);
-
         if (! $user) {
             throw new \RuntimeException(sprintf('No user with username: %s was found', $username));
         }
