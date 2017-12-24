@@ -13,8 +13,8 @@ use Doctrine\ORM\EntityManager;
 use InteractiveSolutions\ZfBehat\Assertions;
 use InteractiveSolutions\ZfBehat\Context\Aware\ApiClientAwareInterface;
 use InteractiveSolutions\ZfBehat\Context\Aware\ApiClientAwareTrait;
-use ZfrOAuth2\Server\Entity\AccessToken;
-use ZfrOAuth2\Server\Entity\TokenOwnerInterface;
+use ZfrOAuth2\Server\Model\AccessToken;
+use ZfrOAuth2\Server\Model\TokenOwnerInterface;
 
 class ZfrOAuthContext implements Context, ApiClientAwareInterface
 {
@@ -49,11 +49,7 @@ class ZfrOAuthContext implements Context, ApiClientAwareInterface
 
     public function generateAccessToken(TokenOwnerInterface $user)
     {
-        $token = new AccessToken();
-        $token->setOwner($user);
-        $token->setToken(substr( md5(rand()), 0, 7));
-        $expiresAt = new DateTime();
-        $token->setExpiresAt($expiresAt->modify('+1 hour'));
+        $token = AccessToken::createNewAccessToken(3600, $user);
 
         $this->entityManager->persist($token);
         $this->entityManager->flush();
@@ -124,6 +120,25 @@ class ZfrOAuthContext implements Context, ApiClientAwareInterface
 
         if (! $user) {
             throw new \RuntimeException(sprintf('No user with email: %s was found', $email));
+        }
+
+        $token = $this->generateAccessToken($user);
+
+        $this->setAuthorizationBearerHeader($token);
+    }
+
+    /**
+     * @When I am authorized with username :email
+     *
+     * @param $email
+     */
+    public function IAmAuthorizedWithUsername(string $username)
+    {
+        /** @var TokenOwnerInterface $user */
+        $user = $this->userFixtureContext->getRepository()->findOneBy(['username' => $username]);
+
+        if (! $user) {
+            throw new \RuntimeException(sprintf('No user with username: %s was found', $username));
         }
 
         $token = $this->generateAccessToken($user);

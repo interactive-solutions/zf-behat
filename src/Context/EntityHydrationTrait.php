@@ -28,6 +28,7 @@ trait EntityHydrationTrait
     private function hydrateEntity(ClassMetadata $metadata, $entity, $values)
     {
         foreach ($metadata->getFieldNames() as $field) {
+
             // Ignore whatever is not set in the properties array
             if (!array_key_exists($field, $values)) {
                 continue;

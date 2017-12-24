@@ -36,7 +36,7 @@ class ApiClient
     /**
      * @var array
      */
-    private $headers = [];
+    private $headers = ['Accept' => 'application/json'];
 
     /**
      * @param Client $client
