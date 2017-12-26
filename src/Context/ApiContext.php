@@ -73,7 +73,8 @@ class ApiContext implements Context, ApiClientAwareInterface
     }
 
     /**
-     * This will check if the value should be considered a alias, and if so, convert the value to the specified alias field
+     * This will check if the value should be considered a alias, and if so, convert the value to the specified alias
+     * field
      *
      * @param $value
      *
@@ -84,7 +85,7 @@ class ApiContext implements Context, ApiClientAwareInterface
     {
         if (is_array($value)) {
 
-            array_walk_recursive($value, function(&$value) {
+            array_walk_recursive($value, function (&$value) {
                 $value = $this->replaceValueWithAlias($value);
             });
 
@@ -96,6 +97,7 @@ class ApiContext implements Context, ApiClientAwareInterface
 
     /**
      * @param $value
+     *
      * @return string|mixed
      */
     private function replaceValueWithAlias($value)
@@ -144,7 +146,7 @@ class ApiContext implements Context, ApiClientAwareInterface
      */
     public function iRetrieveAllWith($type, $queryString)
     {
-        $convertedQuery = $this->convertValueToAlias(parse_query($queryString,false));
+        $convertedQuery = $this->convertValueToAlias(parse_query($queryString, false));
 
         $this->getClient()->get($this->createUri($type), $convertedQuery);
     }
@@ -175,7 +177,7 @@ class ApiContext implements Context, ApiClientAwareInterface
      */
     public function iRetrieveAllFromWithIdAndQueryString($type, $parentType, $parentId, $query)
     {
-        $convertedQuery = $this->convertValueToAlias(parse_query($query,false));
+        $convertedQuery = $this->convertValueToAlias(parse_query($query, false));
 
         $this->getClient()->get($this->createUri($parentType, $parentId, $type), $convertedQuery);
     }
@@ -277,7 +279,7 @@ class ApiContext implements Context, ApiClientAwareInterface
     /**
      * @When I add a new :type with values:
      *
-     * @param string $type
+     * @param string    $type
      * @param TableNode $values
      *
      * @return void
@@ -321,9 +323,9 @@ class ApiContext implements Context, ApiClientAwareInterface
     /**
      * @When I add a new :type to :parentType with id :id and the values:
      *
-     * @param string $type
-     * @param string $parentType
-     * @param string $id
+     * @param string    $type
+     * @param string    $parentType
+     * @param string    $id
      * @param TableNode $values
      */
     public function iAddANewToAndTheValues($type, $parentType, $id, TableNode $values)
@@ -353,9 +355,9 @@ class ApiContext implements Context, ApiClientAwareInterface
     /**
      * @When I add a new :type to :parentType with alias :alias and values:
      *
-     * @param $type
-     * @param $parentType
-     * @param $alias
+     * @param           $type
+     * @param           $parentType
+     * @param           $alias
      * @param TableNode $values
      */
     public function iAddANewToAliasWithValues($type, $parentType, $alias, TableNode $values)
@@ -369,10 +371,10 @@ class ApiContext implements Context, ApiClientAwareInterface
     /**
      * @When I update a :type with id :typeId from relation :parentType with id :parentId with values:
      *
-     * @param string $type
-     * @param string $typeId
-     * @param string $parentType
-     * @param string $parentId
+     * @param string    $type
+     * @param string    $typeId
+     * @param string    $parentType
+     * @param string    $parentId
      * @param TableNode $values
      */
     public function iUpdateATypeWithIdFromRelationParentTypeWithId($type, $typeId, $parentType, $parentId, TableNode $values)
@@ -390,8 +392,8 @@ class ApiContext implements Context, ApiClientAwareInterface
     /**
      * @When I update a :type with id :id and the values:
      *
-     * @param string $type
-     * @param string $id
+     * @param string    $type
+     * @param string    $id
      * @param TableNode $values
      */
     public function iUpdateAWithIdAndTheValues($type, $id, TableNode $values)
@@ -409,8 +411,8 @@ class ApiContext implements Context, ApiClientAwareInterface
     /**
      * @When I update a :type with alias :alias and the values:
      *
-     * @param $type
-     * @param $alias
+     * @param           $type
+     * @param           $alias
      * @param TableNode $values
      */
     public function iUpdateAWithAliasAndTheValues($type, $alias, TableNode $values)
@@ -426,8 +428,8 @@ class ApiContext implements Context, ApiClientAwareInterface
      *
      * @When /^I update a "([^"]*)" with id (\d+) with:$/
      *
-     * @param string $type
-     * @param string $id
+     * @param string       $type
+     * @param string       $id
      * @param PyStringNode $string
      *
      * @return void
@@ -451,8 +453,8 @@ class ApiContext implements Context, ApiClientAwareInterface
     /**
      * @When I update a :type with alias :alias with:
      *
-     * @param $type
-     * @param $alias
+     * @param              $type
+     * @param              $alias
      * @param PyStringNode $string
      */
     public function iUpdateAWithAliasWith($type, $alias, PyStringNode $string)
@@ -468,7 +470,7 @@ class ApiContext implements Context, ApiClientAwareInterface
      *
      * @When /^I add a new "([^"]*)" with:$/
      *
-     * @param string $type
+     * @param string       $type
      * @param PyStringNode $string
      *
      * @return void
@@ -507,8 +509,8 @@ class ApiContext implements Context, ApiClientAwareInterface
     /**
      * @When I partially update a :type with alias :alias and the values:
      *
-     * @param $type
-     * @param $alias
+     * @param           $type
+     * @param           $alias
      * @param TableNode $values
      */
     public function iPartiallyUpdateAWithAliasAndTheValues($type, $alias, TableNode $values)
@@ -547,9 +549,9 @@ class ApiContext implements Context, ApiClientAwareInterface
      * @When I remove a :type with id :typeId from relation :parentType with id :id
      *
      * @param string $type
-     * @param $typeId
+     * @param        $typeId
      * @param string $parentType
-     * @param $parentId
+     * @param        $parentId
      */
     public function iRemoveATypeWithIdFromRelationParentTypeWithId($type, $typeId, $parentType, $parentId)
     {
@@ -572,8 +574,8 @@ class ApiContext implements Context, ApiClientAwareInterface
     /**
      * @When I send a :action action with method :method and values:
      *
-     * @param $action
-     * @param $method
+     * @param           $action
+     * @param           $method
      * @param TableNode $values
      */
     public function iSendAActionWithMethodAndValues($action, $method, TableNode $values)
@@ -590,8 +592,8 @@ class ApiContext implements Context, ApiClientAwareInterface
     /**
      * @When I send a :action action with method :method and body:
      *
-     * @param $action
-     * @param $method
+     * @param              $action
+     * @param              $method
      * @param PyStringNode $string
      */
     public function iSendAActionWithMethodAndBody($action, $method, PyStringNode $string)
@@ -613,7 +615,7 @@ class ApiContext implements Context, ApiClientAwareInterface
      *
      * @param string $action
      * @param string $type
-     * @param int $id
+     * @param int    $id
      * @param string $method
      */
     public function iSendAActionToResourceWithIdAndMethod($action, $type, $id, $method)
@@ -624,10 +626,10 @@ class ApiContext implements Context, ApiClientAwareInterface
     /**
      * @When I send a :action action to resource :type with id :id and method :method with values:
      *
-     * @param string $action
-     * @param string $type
-     * @param int $id
-     * @param string $method
+     * @param string    $action
+     * @param string    $type
+     * @param int       $id
+     * @param string    $method
      * @param TableNode $values
      */
     public function iSendAActionToResourceWithIdWithMethodAndValues($action, $type, $id, $method, TableNode $values)
@@ -647,10 +649,10 @@ class ApiContext implements Context, ApiClientAwareInterface
     /**
      * @When I send a :action action to resource :type with id :id and method :method with:
      *
-     * @param string $action
-     * @param string $type
-     * @param int $id
-     * @param string $method
+     * @param string       $action
+     * @param string       $type
+     * @param int          $id
+     * @param string       $method
      * @param PyStringNode $string
      */
     public function iSendAActionToResourceWithIdWithMethodWith($action, $type, $id, $method, PyStringNode $string)
@@ -695,10 +697,10 @@ class ApiContext implements Context, ApiClientAwareInterface
     /**
      * @When I send a :action action to resource :type with alias :alias and method :method with values:
      *
-     * @param $action
-     * @param $type
-     * @param $alias
-     * @param $method
+     * @param           $action
+     * @param           $type
+     * @param           $alias
+     * @param           $method
      * @param TableNode $values
      */
     public function iSendAActionToResourceWithAliasWithMethodAndValues(
@@ -723,10 +725,10 @@ class ApiContext implements Context, ApiClientAwareInterface
     /**
      * @When I send a :action action to resource :type with alias :alias and method :method with:
      *
-     * @param $action
-     * @param $type
-     * @param $alias
-     * @param $method
+     * @param              $action
+     * @param              $type
+     * @param              $alias
+     * @param              $method
      * @param PyStringNode $string
      */
     public function iSendAActionToResourceWithAliasAndMethodWith($action, $type, $alias, $method, PyStringNode $string)
@@ -746,7 +748,7 @@ class ApiContext implements Context, ApiClientAwareInterface
     /**
      * @param string $uri
      * @param string $method
-     * @param array $body
+     * @param array  $body
      */
     private function sendRpcAction($uri, $method, array $body = [])
     {
@@ -772,7 +774,7 @@ class ApiContext implements Context, ApiClientAwareInterface
     /**
      * Generate the uri to a api resource or collection
      *
-     * @param string $type
+     * @param string      $type
      * @param string|null $typeId
      * @param string|null $subType
      * @param string|null $subTypeId
@@ -903,6 +905,33 @@ class ApiContext implements Context, ApiClientAwareInterface
     }
 
     /**
+     * @Then /^I should receive a validation error on "([^"]*)" with the key "([^"]*)"$/
+     */
+    public function iShouldReceiveAValidationErrorOnWithTheKey($field, $value)
+    {
+        $responseBody = $this->getClient()->lastResponseBody;
+
+        try {
+            Assertions::assertJson($responseBody);
+            Assertions::assertEquals(422, $this->getClient()->lastResponse->getStatusCode());
+
+            $data = json_decode($responseBody, true);
+
+            Assertions::assertArrayHasKey('errors', $data);
+            Assertions::assertArrayHasKey($field, $data['errors']);
+            Assertions::assertArrayHasKey($value, $data['errors'][$field]);
+
+        } catch (PHPUnit_Framework_ExpectationFailedException $e) {
+
+            // Allows for easier debugging
+            echo $this->getClient()->lastResponse->getStatusCode() . PHP_EOL;
+            echo $responseBody;
+
+            throw $e;
+        }
+    }
+
+    /**
      * @Then /^I should receive a (\d+)$/
      *
      * @param int $statusCode
@@ -949,7 +978,6 @@ class ApiContext implements Context, ApiClientAwareInterface
         }
 
     }
-
 
     /**
      * @Given /^the response should match the request properties$/
@@ -1113,6 +1141,7 @@ class ApiContext implements Context, ApiClientAwareInterface
      *
      * @param $object
      * @param $field
+     *
      * @return mixed
      */
     private function getFieldOfObject($object, $field)
