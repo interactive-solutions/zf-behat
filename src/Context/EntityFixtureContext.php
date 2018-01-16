@@ -10,6 +10,7 @@ use Behat\Behat\Context\Context;
 use Behat\Behat\Context\SnippetAcceptingContext;
 use Behat\Behat\Hook\Scope\BeforeScenarioScope;
 use Behat\Gherkin\Node\TableNode;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
 use Doctrine\ORM\OptimisticLockException;
@@ -447,6 +448,48 @@ class EntityFixtureContext implements Context
         $this->setAssociation($targetEntity, $parentEntity, $targetMetadata, $parentMetadata);
 
         $this->entityManager->persist($targetEntity);
+        $this->entityManager->flush();
+    }
+
+    /**
+     * @Given I associate :sourceAlias to :targetAlias on the field :field
+     */
+    public function addAssociation($source, $target, $field)
+    {
+        $sourceEntity = $this->getEntityFromAlias($source);
+        $targetEntity = $this->getEntityFromAlias($target);
+
+        $targetMetadata     = $this->entityManager->getClassMetadata(get_class($targetEntity));
+        $associationMapping = $targetMetadata->getAssociationMapping($field);
+
+        if ($associationMapping['isOwningSide']) {
+            $reflection = $targetMetadata->getReflectionProperty($field);
+            $reflection->setAccessible(true);
+
+            $value = $reflection->getValue($targetEntity);
+            if ($value instanceof Collection) {
+                $value->add($sourceEntity);
+            } else {
+                $reflection->setValue($targetEntity, $sourceEntity);
+            }
+        } else {
+            if (empty($associationMapping['mappedBy'] ?? null)) {
+                throw new RuntimeException('Reverse the source and target alias so you apply to the owning side of a unidirectional assocation');
+            }
+
+            $reflection = new \ReflectionClass($sourceEntity);
+
+            $property = $reflection->getProperty($associationMapping['mappedBy']);
+            $property->setAccessible(true);
+
+            $value = $property->getValue($sourceEntity);
+            if ($value instanceof Collection) {
+                $value->add($targetEntity);
+            } else {
+                $property->setValue($sourceEntity, $targetEntity);
+            }
+        }
+
         $this->entityManager->flush();
     }
 
