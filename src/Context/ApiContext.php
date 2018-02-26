@@ -1060,6 +1060,10 @@ class ApiContext implements SnippetAcceptingContext, ApiClientAwareInterface, Se
             case 'nullable':
                 $shouldBe = null;
                 break;
+            case 'countable':
+                $shouldBe = (int)$shouldBe;
+                $body     = count($body);
+                break;
             default:
                 $shouldBe = (string)$shouldBe;
         }
