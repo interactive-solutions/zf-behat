@@ -21,6 +21,11 @@ class DatabaseContext implements Context
     private $objectManagerRef = EntityManager::class;
 
     /**
+     * @var string
+     */
+    private $serviceManagerRef = ServiceManager::class;
+
+    /**
      * @var ContainerInterface
      */
     private $container;
@@ -45,6 +50,18 @@ class DatabaseContext implements Context
     {
         return $this->container->get($this->objectManagerRef);
     }
+
+    /**
+     * @throws \Psr\Container\ContainerExceptionInterface
+     * @throws \Psr\Container\NotFoundExceptionInterface
+     *
+     * @return ServiceManager
+     */
+    public function getServiceManager(): ServiceManager
+    {
+        return $this->container->get($this->serviceManagerRef);
+    }
+
 
     /**
      * @AfterScenario
