@@ -37,4 +37,9 @@ class ServiceManagerContext implements Context
     {
         return $this->serviceManager->get($class);
     }
+
+    public function getServiceManager()
+    {
+        return $this->serviceManager;
+    }
 }

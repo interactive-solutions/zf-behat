@@ -11,7 +11,6 @@ use Behat\Behat\Context\Context;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Tools\SchemaTool;
 use Interop\Container\ContainerInterface;
-use Zend\ServiceManager\ServiceManager;
 
 class DatabaseContext implements Context
 {
@@ -19,11 +18,6 @@ class DatabaseContext implements Context
      * @var string
      */
     private $objectManagerRef = EntityManager::class;
-
-    /**
-     * @var string
-     */
-    private $serviceManagerRef = ServiceManager::class;
 
     /**
      * @var ContainerInterface
@@ -50,18 +44,6 @@ class DatabaseContext implements Context
     {
         return $this->container->get($this->objectManagerRef);
     }
-
-    /**
-     * @throws \Psr\Container\ContainerExceptionInterface
-     * @throws \Psr\Container\NotFoundExceptionInterface
-     *
-     * @return ServiceManager
-     */
-    public function getServiceManager(): ServiceManager
-    {
-        return $this->container->get($this->serviceManagerRef);
-    }
-
 
     /**
      * @AfterScenario
