@@ -17,6 +17,7 @@ use InteractiveSolutions\ZfBehat\Assertions;
 use InteractiveSolutions\ZfBehat\Context\Aware\ApiClientAwareInterface;
 use InteractiveSolutions\ZfBehat\Context\Aware\ApiClientAwareTrait;
 use InteractiveSolutions\ZfBehat\Util\PluralisationUtil;
+use PHPUnit\Framework\ExpectationFailedException;
 use Psr\Container\ContainerInterface;
 use RuntimeException;
 use Zend\ServiceManager\ServiceManager;
@@ -823,7 +824,7 @@ class ApiContext implements Context, ApiClientAwareInterface
         try {
             Assertions::assertEquals(401, $this->getClient()->lastResponse->getStatusCode());
 
-        } catch (PHPUnit_Framework_ExpectationFailedException $e) {
+        } catch (ExpectationFailedException $e) {
 
             // Allows for easier debugging
             echo $this->getClient()->lastResponse->getStatusCode() . PHP_EOL;
@@ -845,7 +846,7 @@ class ApiContext implements Context, ApiClientAwareInterface
                 Assertions::assertEquals($message, json_decode($this->getClient()->lastResponseBody, true)['message']);
             }
 
-        } catch (PHPUnit_Framework_ExpectationFailedException $e) {
+        } catch (ExpectationFailedException $e) {
 
             // Allows for easier debugging
             echo $this->getClient()->lastResponse->getStatusCode() . PHP_EOL;
@@ -871,7 +872,7 @@ class ApiContext implements Context, ApiClientAwareInterface
         try {
             Assertions::assertEquals(422, $this->getClient()->lastResponse->getStatusCode());
 
-        } catch (PHPUnit_Framework_ExpectationFailedException $e) {
+        } catch (ExpectationFailedException $e) {
 
             // Allows for easier debugging
             echo $this->getClient()->lastResponse->getStatusCode() . PHP_EOL;
@@ -894,7 +895,7 @@ class ApiContext implements Context, ApiClientAwareInterface
 
             Assertions::assertCount((int)$count, json_decode($responseBody, true)['errors']);
 
-        } catch (PHPUnit_Framework_ExpectationFailedException $e) {
+        } catch (ExpectationFailedException $e) {
 
             // Allows for easier debugging
             echo $this->getClient()->lastResponse->getStatusCode() . PHP_EOL;
@@ -921,7 +922,7 @@ class ApiContext implements Context, ApiClientAwareInterface
             Assertions::assertArrayHasKey($field, $data['errors']);
             Assertions::assertArrayHasKey($value, $data['errors'][$field]);
 
-        } catch (PHPUnit_Framework_ExpectationFailedException $e) {
+        } catch (ExpectationFailedException $e) {
 
             // Allows for easier debugging
             echo $this->getClient()->lastResponse->getStatusCode() . PHP_EOL;
@@ -942,7 +943,7 @@ class ApiContext implements Context, ApiClientAwareInterface
     {
         try {
             Assertions::assertEquals($statusCode, $this->getClient()->lastResponse->getStatusCode());
-        } catch (PHPUnit_Framework_ExpectationFailedException $e) {
+        } catch (ExpectationFailedException $e) {
 
             // Allows for easier debugging
             echo $this->getClient()->lastResponse->getStatusCode() . PHP_EOL;
@@ -968,7 +969,7 @@ class ApiContext implements Context, ApiClientAwareInterface
             Assertions::assertEquals($statusCode, $this->getClient()->lastResponse->getStatusCode());
             Assertions::assertJson($responseBody);
 
-        } catch (PHPUnit_Framework_ExpectationFailedException $e) {
+        } catch (ExpectationFailedException $e) {
 
             // Allows for easier debugging
             echo $this->getClient()->lastResponse->getStatusCode() . PHP_EOL;
@@ -992,7 +993,7 @@ class ApiContext implements Context, ApiClientAwareInterface
 
         try {
             Assertions::assertJson($responseBody);
-        } catch (PHPUnit_Framework_ExpectationFailedException $e) {
+        } catch (ExpectationFailedException $e) {
             echo $responseBody;
         }
 
@@ -1014,7 +1015,7 @@ class ApiContext implements Context, ApiClientAwareInterface
                 }
             }
 
-        } catch (PHPUnit_Framework_ExpectationFailedException $e) {
+        } catch (ExpectationFailedException $e) {
 
             // Easier debugging
             print_r($json);
@@ -1043,7 +1044,7 @@ class ApiContext implements Context, ApiClientAwareInterface
             Assertions::assertArrayHasKey('data', $json);
             Assertions::assertCount((int)$records, $json['data']);
 
-        } catch (PHPUnit_Framework_ExpectationFailedException $e) {
+        } catch (ExpectationFailedException $e) {
 
             // Allows for easier debugging
             echo $this->getClient()->lastResponse->getStatusCode() . PHP_EOL;
